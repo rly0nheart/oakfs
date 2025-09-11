@@ -1,5 +1,5 @@
 [project]
-name = "libcute"
+name = "libfs"
 version = "0.1.0"
 description = ""
 authors = [
@@ -13,8 +13,7 @@ dependencies = [
 ]
 
 [tool.poetry.scripts]
-ctree = "libcute._cli:ctree"
-ctable = "libcute._cli:ctable"
+libfs = "libfs._cli:start"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
