@@ -447,16 +447,6 @@ class Oakfs:
         List contents of a directory.
         """
 
-        # try:
-        # except FileNotFoundError:
-        #    print(
-        #        f"[bold]ls: cannot access '{self._path}': no such file or directory[/bold]"
-        #    )
-        #    return Table()
-        # except PermissionError:
-        #    print(f"[bold]ls: permission denied for '{self._path}'[/bold]")
-        #    return Table()
-
         entries = list(os.scandir(self._path))
 
         rows: list = []
@@ -500,9 +490,9 @@ class Oakfs:
                     metadata["size"],
                     metadata["mod_time"],
                     metadata["type"].strip("."),
-                    metadata["permissions"],
                     metadata["owner"],
                     metadata["group"],
+                    metadata["permissions"],
                 )
             else:
                 self._table.add_row(

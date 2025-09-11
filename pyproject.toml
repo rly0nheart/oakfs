@@ -1,7 +1,7 @@
 [project]
 name = "oakfs"
 version = "0.1.0"
-description = "A pretty filesystem visualisation tool, for pretty humans :)"
+description = "A cute filesystem visualisation tool, for cute humans 🙂"
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
 ]
