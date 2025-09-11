@@ -1,7 +1,7 @@
 [project]
 name = "libfs"
 version = "0.1.0"
-description = ""
+description = "A pretty filesystem visualisation tool, for pretty humans :)"
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
 ]
