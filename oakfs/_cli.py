@@ -21,7 +21,7 @@ DATETIME_FORMAT = ["concise", "locale"]
 @click.pass_context
 def cli(ctx: click.Context, show_all: bool, reverse: bool):
     """
-    A pretty filesystem visualisation tool, for pretty humans :)
+    oakfs: a pretty filesystem visualisation tool, for pretty humans :)
     """
     # Store global options in Click context object
     ctx.ensure_object(dict)

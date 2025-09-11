@@ -14,6 +14,7 @@ dependencies = [
 
 [tool.poetry.scripts]
 oak = "oakfs._cli:start"
+oakfs = "oakfs._cli:start"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
