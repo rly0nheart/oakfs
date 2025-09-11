@@ -1,0 +1,21 @@
+[project]
+name = "libcute"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "rich-click (>=1.8.9,<2.0.0)"
+]
+
+[tool.poetry.scripts]
+ctree = "libcute._cli:ctree"
+ctable = "libcute._cli:ctable"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
