@@ -6,7 +6,7 @@ import rich_click as click
 from rich import print
 
 from . import __pkg__, __version__
-from ._main import LibFs, CWD
+from ._main import Oakfs, CWD
 
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["concise", "locale"]
@@ -20,7 +20,9 @@ DATETIME_FORMAT = ["concise", "locale"]
 @click.option("-r", "--reverse", is_flag=True, help="Reverse the sort order.")
 @click.pass_context
 def cli(ctx: click.Context, show_all: bool, reverse: bool):
-    """A filesystem visualization tool (tree & table views)."""
+    """
+    A pretty filesystem visualisation tool, for pretty humans :)
+    """
     # Store global options in Click context object
     ctx.ensure_object(dict)
     ctx.obj["show_all"] = show_all
@@ -56,7 +58,7 @@ def table(
     table_style: str,
 ):
     """Show files and directories in a table."""
-    libfs = LibFs(
+    oak = Oakfs(
         path=path,
         reverse=ctx.obj["reverse"],
         show_all=ctx.obj["show_all"],
@@ -64,7 +66,7 @@ def table(
         table_style=table_style,
         dt_format=datetime_format,
     )
-    libfs.table()
+    oak.table()
 
 
 @cli.command()
@@ -72,12 +74,12 @@ def table(
 @click.pass_context
 def tree(ctx: click.Context, path: Path):
     """Show files and directories in a tree."""
-    libfs = LibFs(
+    oak = Oakfs(
         path=path,
         reverse=ctx.obj["reverse"],
         show_all=ctx.obj["show_all"],
     )
-    libfs.tree()
+    oak.tree()
 
 
 def start():

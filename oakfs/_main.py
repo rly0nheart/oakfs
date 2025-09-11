@@ -233,7 +233,7 @@ ENTRY_STYLES: dict = {
 }
 
 
-class LibFs:
+class Oakfs:
     def __init__(self, path: Path, **kwargs: t.Union[bool, t.Any]):
         self._path = path
         self._dt_now: datetime = datetime.now()

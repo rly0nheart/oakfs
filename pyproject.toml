@@ -1,5 +1,5 @@
 [project]
-name = "libfs"
+name = "oakfs"
 version = "0.1.0"
 description = "A pretty filesystem visualisation tool, for pretty humans :)"
 authors = [
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [tool.poetry.scripts]
-libfs = "libfs._cli:start"
+oak = "oakfs._cli:start"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
