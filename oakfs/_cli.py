@@ -108,5 +108,5 @@ def start():
         print(f"{__pkg__}: cannot open directory '{e.filename}': Permission denied")
         sys.exit(1)
     except Exception as e:
-        print(f"{__pkg__}: {e}")
+        print(f"{__pkg__}: error: {e}")
         sys.exit(1)
