@@ -11,6 +11,7 @@ from pathlib import Path
 import humanize
 from rich import box
 from rich import print
+from rich.status import Status
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
@@ -237,10 +238,11 @@ class Oakfs:
     def __init__(self, path: Path, **kwargs: t.Union[bool, t.Any]):
         self._path = path
         self._dt_now: datetime = datetime.now()
-        self._show_all = kwargs.get("show_all", False)
-        self._show_group = kwargs.get("show_group", False)
-        self._dirs_only = kwargs.get("dirs_only", False)
-        self._files_only = kwargs.get("files_only", False)
+        self._show_all = kwargs.get("_all", False)
+        self._show_group = kwargs.get("group", False)
+        self._dirs_only = kwargs.get("dirs", False)
+        self._files_only = kwargs.get("files", False)
+        self._symlinks_only = kwargs.get("symlinks", False)
         self._reverse = kwargs.get("reverse", False)
         self._dt_format: t.Literal["locale", "concise"] = kwargs.get(
             "dt_format", "locale"
@@ -257,10 +259,25 @@ class Oakfs:
         self._table.add_column("size", justify="right")
         self._table.add_column("modified")
         self._table.add_column("type", style="#B7CAD4")
-        if self._show_all:
+        if self._show_group:
             self._table.add_column("owner")
             self._table.add_column("group")
             self._table.add_column("permissions", style="dim")
+
+    def _summary(self, directories: int, files: int, symlinks: int):
+
+        summary_msg: str = ""
+
+        if self._files_only:
+            summary_msg = f"found {files} files"
+        if self._dirs_only:
+            summary_msg = f"found {directories} directories"
+        if self._symlinks_only:
+            summary_msg = f"found {symlinks} symlinks"
+        elif not any([self._dirs_only, self._files_only, self._symlinks_only]):
+            summary_msg = f"found {directories} directories, {files} files, and {symlinks} symlinks"
+
+        print(f"\n[bold]{summary_msg}[/bold]")
 
     def _get_entry_metadata(self, entry: os.DirEntry[str]) -> dict:
         """
@@ -350,7 +367,7 @@ class Oakfs:
             highlight=True,
         )
 
-        def add_nodes(directory: str, tree: Tree) -> t.Tuple[int, int, int]:
+        def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int]:
             entries: list[os.DirEntry] = list(os.scandir(directory))
             entries.sort(key=lambda e: e.name.lower(), reverse=self._reverse)
 
@@ -366,82 +383,36 @@ class Oakfs:
                 if self._files_only and not entry.is_file(follow_symlinks=False):
                     continue
 
-                if entry.is_file(follow_symlinks=False):
-                    files_count += 1
-                elif entry.is_dir(follow_symlinks=False):
-                    dirs_count += 1
-                elif entry.is_symlink():
-                    symlinks_count += 1
+                with Status(f"[bold green]processing:[/] {entry.name}"):
+                    if entry.is_file(follow_symlinks=False):
+                        files_count += 1
+                    elif entry.is_dir(follow_symlinks=False):
+                        dirs_count += 1
+                    elif entry.is_symlink():
+                        symlinks_count += 1
 
-                # render
-                metadata: dict = self._get_entry_metadata(entry=entry)
-                filename: Text = self._set_entry_name(metadata=metadata)
+                    metadata = self._get_entry_metadata(entry=entry)
+                    filename = self._set_entry_name(metadata=metadata)
 
-                if entry.is_dir(follow_symlinks=False):
-                    branch = tree.add(filename)
-                    sub_files, sub_dirs, sub_syms = add_nodes(
-                        directory=entry.path, tree=branch
-                    )
-                    files_count += sub_files
-                    dirs_count += sub_dirs
-                    symlinks_count += sub_syms
-                else:
-                    tree.add(filename)
+                    if entry.is_dir(follow_symlinks=False):
+                        branch = tree.add(filename)
+                        sub_files, sub_dirs, sub_syms = add_nodes(entry.path, branch)
+                        files_count += sub_files
+                        dirs_count += sub_dirs
+                        symlinks_count += sub_syms
+                    else:
+                        tree.add(filename)
 
             return files_count, dirs_count, symlinks_count
 
         files, directories, symlinks = add_nodes(
             directory=str(self._path), tree=root_tree
         )
+
         print(root_tree)
-        print(f"{files} files, {directories} directories, and {symlinks} symlinks.")
+        self._summary(directories=directories, files=files, symlinks=symlinks)
 
-    def file(
-        self,
-        path: str,
-    ) -> Table:
-        """
-        List a specified file.
-
-        :param path: File path to list.
-        """
-
-        # get entry using scandir on its parent (so we keep DirEntry API)
-        parent_directory = os.path.dirname(path) or "."
-        absolute_target = os.path.abspath(path)
-        target_entry: os.DirEntry[str] | None = None
-
-        with os.scandir(parent_directory) as directory_entries:
-            for dir_entry in directory_entries:
-                if os.path.abspath(dir_entry.path) == absolute_target:
-                    target_entry = dir_entry
-                    break
-
-        if not target_entry:
-            print(f"[bold]ls: cannot access '{path}': no such file or directory[/bold]")
-            return Table()
-
-        metadata: dict = self._get_entry_metadata(entry=target_entry)
-        filename: Text = self._set_entry_name(metadata=metadata)
-
-        if "permissions" in [col.header for col in self._table.columns]:
-            self._table.add_row(
-                filename,
-                metadata["size"],
-                metadata["mod_time"],
-                metadata["type"].strip("."),
-                metadata["permissions"],
-            )
-        else:
-            self._table.add_row(
-                filename,
-                metadata["size"],
-                metadata["mod_time"],
-                metadata["type"].strip("."),
-            )
-
-        return self._table
-
+    def file(self): ...
     def table(self):
         """
         List contents of a directory.
@@ -450,23 +421,26 @@ class Oakfs:
         entries = list(os.scandir(self._path))
 
         rows: list = []
-        files: list = []
-        directories: list = []
-        symlinks: list = []
+        files_count: int = 0
+        directories_count: int = 0
+        symlinks_count: int = 0
 
         for entry in entries:
-            if entry.is_dir():
-                directories.append(entry)
-            if entry.is_file():
-                files.append(files)
+            if entry.is_dir(follow_symlinks=False):
+                directories_count += 1
+            if entry.is_file(follow_symlinks=False):
+                files_count += 1
             if entry.is_symlink():
-                symlinks.append(symlinks)
+                symlinks_count += 1
 
             if not self._show_all and entry.name.startswith("."):
                 continue
             if self._dirs_only and not entry.is_dir():
                 continue
             if self._files_only and not entry.is_file():
+                continue
+
+            if self._symlinks_only and not entry.is_symlink():
                 continue
 
             metadata = self._get_entry_metadata(entry=entry)
@@ -484,7 +458,7 @@ class Oakfs:
 
         # add rows to the table
         for _, metadata, filename in rows:
-            if "permissions" in [col.header for col in self._table.columns]:
+            if self._show_group:
                 self._table.add_row(
                     filename,
                     metadata["size"],
@@ -503,6 +477,6 @@ class Oakfs:
                 )
 
         print(self._table)
-        print(
-            f"{len(files)} files, {len(directories)} directories, and {len(symlinks)} symlinks."
+        self._summary(
+            directories=directories_count, files=files_count, symlinks=symlinks_count
         )
