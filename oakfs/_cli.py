@@ -5,7 +5,7 @@ import rich_click as click
 from rich import print
 
 from . import __pkg__, __version__
-from ._main import Oakfs, CWD
+from ._main import Oak, CWD
 
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["concise", "locale"]
@@ -69,7 +69,7 @@ def table(
     path: Path,
 ):
     """Show files and directories in a table."""
-    oak = Oakfs(
+    oak = Oak(
         path=path,
         dirs=ctx.obj["dirs"],
         files=ctx.obj["files"],
@@ -87,7 +87,7 @@ def table(
 @click.pass_context
 def tree(ctx: click.Context, path: Path):
     """Show files and directories in a tree."""
-    oak = Oakfs(
+    oak = Oak(
         path=path,
         reverse=ctx.obj["reverse"],
         show_all=ctx.obj["all"],

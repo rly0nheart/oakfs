@@ -234,7 +234,7 @@ ENTRY_STYLES: dict = {
 }
 
 
-class Oakfs:
+class Oak:
     def __init__(self, path: Path, **kwargs: t.Union[bool, t.Any]):
         self._path = path
         self._dt_now: datetime = datetime.now()
@@ -264,7 +264,7 @@ class Oakfs:
             self._table.add_column("group")
             self._table.add_column("permissions", style="dim")
 
-    def _summary(self, directories: int, files: int, symlinks: int):
+    def summary(self, directories: int, files: int, symlinks: int):
 
         summary_msg: str = ""
 
@@ -410,7 +410,7 @@ class Oakfs:
         )
 
         print(root_tree)
-        self._summary(directories=directories, files=files, symlinks=symlinks)
+        self.summary(directories=directories, files=files, symlinks=symlinks)
 
     def file(self): ...
     def table(self):
@@ -477,6 +477,6 @@ class Oakfs:
                 )
 
         print(self._table)
-        self._summary(
+        self.summary(
             directories=directories_count, files=files_count, symlinks=symlinks_count
         )
