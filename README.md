@@ -80,9 +80,10 @@ Global options (apply to both commands):
 
 ## 🖼️ Screenshots
 
-<img src="img/tree.png" alt="tree" style="width: 600px;">
-
-<img src="img/table.png" alt="table" style="width: 600px;">
+<p align="center">
+    <img src="img/tree.png" alt="tree" style="width: 600px;">
+    <img src="img/table.png" alt="table" style="width: 600px;">
+</p>
 
 ## 📜 License
 
