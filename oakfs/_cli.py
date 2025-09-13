@@ -20,6 +20,7 @@ from rich.prompt import Prompt
 @click.option("-f", "--files", is_flag=True, help="show files only.")
 @click.option("-d", "--dirs", is_flag=True, help="show directories only.")
 @click.option("-s", "--symlinks", is_flag=True, help="show symlinks only.")
+@click.option("-j", "--junctions", is_flag=True, help="show junctions only (Windows).")
 @click.option(
     "-T",
     "--dt-format",
@@ -42,6 +43,7 @@ def cli(
     dirs: bool,
     files: bool,
     symlinks: bool,
+    junctions: bool,
     _all: bool,
     reverse: bool,
     group: bool,
@@ -55,6 +57,7 @@ def cli(
     ctx.obj["dirs"] = dirs
     ctx.obj["files"] = files
     ctx.obj["symlinks"] = symlinks
+    ctx.obj["junctions"] = junctions
     ctx.obj["all"] = _all
     ctx.obj["group"] = group
     ctx.obj["dt_format"] = dt_format
@@ -86,6 +89,7 @@ def table(
         dirs_only=ctx.obj["dirs"],
         files_only=ctx.obj["files"],
         symlinks_only=ctx.obj["symlinks"],
+        junctions_only=ctx.obj["junctions"],
         show_all=ctx.obj["all"],
         show_group=ctx.obj["group"],
         verbose=ctx.obj["verbose"],
@@ -105,6 +109,7 @@ def tree(ctx: click.Context, path: Path):
         dirs_only=ctx.obj["dirs"],
         files_only=ctx.obj["files"],
         symlinks_only=ctx.obj["symlinks"],
+        junctions_only=ctx.obj["junctions"],
         verbose=ctx.obj["verbose"],
     )
     oak.tree()
@@ -118,7 +123,4 @@ def start():
         sys.exit(2)
     except PermissionError as e:
         print(f"{__pkg__}: cannot open directory '{e.filename}': Permission denied")
-        sys.exit(1)
-    except Exception as e:
-        print(f"{__pkg__}: unknown error: {e}")
         sys.exit(1)

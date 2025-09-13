@@ -247,6 +247,7 @@ class EntryScanner:
         dirs_only: bool,
         files_only: bool,
         symlinks_only: bool,
+        junctions_only: bool,
         verbose: bool,
         dt_now: datetime,
         dt_format: t.Literal["locale", "concise"],
@@ -260,22 +261,35 @@ class EntryScanner:
         :param dirs_only: Show directories only
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
+        :param junctions_only: Show junctions only (Windows)
         :param verbose: Enable verbose output
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (locale or concise)
         """
+
+        # disable junction filtering on non-Windows
+        if not self.on_windows():
+            junctions_only = False
+
         self.path = path
         self.reverse = reverse
         self.show_all = show_all
         self.dirs_only = dirs_only
         self.files_only = files_only
         self.symlinks_only = symlinks_only
+        self.junctions_only = junctions_only
         self.verbose = verbose
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
 
     @staticmethod
-    def entry_type(entry: os.DirEntry) -> str:
+    def on_windows() -> bool:
+        """
+        Check if the operating system is Windows.
+        """
+        return os.name == "nt"
+
+    def entry_type(self, entry: os.DirEntry) -> str:
         """
         Determine the type of a directory entry.
 
@@ -283,16 +297,16 @@ class EntryScanner:
         :return: Type as a string ("dir", "symlink", "file", or "no idea")
         """
 
-        if entry.is_dir(follow_symlinks=False):
+        if entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
             return "dir"
         elif entry.is_symlink():
+            if self.on_windows() and entry.is_dir(follow_symlinks=False):
+                return "junction"
             return "symlink"
         elif entry.is_file(follow_symlinks=False):
             return "file"
-        elif entry.is_junction():
-            return "junction"
         else:
-            return "no idea lol"
+            return "do idea, lol"
 
     def iter_entries(
         self, directory: t.Union[str, Path]
@@ -325,26 +339,36 @@ class EntryScanner:
                     continue
                 if self.symlinks_only and not entry.is_symlink():
                     continue
+                if self.junctions_only and not (
+                    self.on_windows()
+                    and entry.is_symlink()
+                    and entry.is_dir(follow_symlinks=False)
+                ):
+                    continue
 
                 yield entry, self.get_entry_metadata(entry=entry)
 
-    @staticmethod
-    def classify_entry(entry: os.DirEntry) -> t.Tuple[int, int, int]:
+    def classify_entry(self, entry: os.DirEntry) -> t.Tuple[int, int, int, int]:
         """
         Classify the entry as file, directory, or symlink.
 
         :param entry: Directory entry to classify
-        :return: Tuple with counts of (files, directories, symlinks)
+        :return: Tuple with counts of (files, directories, symlinks, junctions)
         """
 
-        files = dirs = symlinks = 0
+        files = dirs = symlinks = junctions = 0
+
         if entry.is_file(follow_symlinks=False):
             files = 1
-        elif entry.is_dir(follow_symlinks=False):
+        elif entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
             dirs = 1
         elif entry.is_symlink():
-            symlinks = 1
-        return files, dirs, symlinks
+            if self.on_windows() and entry.is_dir(follow_symlinks=False):
+                junctions = 1
+            else:
+                symlinks = 1
+
+        return files, dirs, symlinks, junctions
 
     def get_entry_metadata(self, entry: os.DirEntry) -> t.Dict:
         """
@@ -359,6 +383,7 @@ class EntryScanner:
         entry_stat: stat_result = entry.stat(follow_symlinks=False)
         mtime: datetime = datetime.fromtimestamp(entry_stat.st_mtime)
         size: str = humanize.naturalsize(entry_stat.st_size, binary=True)
+
         mod_time = (
             f"{humanize.naturaltime(self.dt_now - mtime)}"
             if self.dt_format == "concise"
@@ -375,10 +400,13 @@ class EntryScanner:
         except KeyError:
             group = str(entry_stat.st_gid)
 
-        if entry.is_dir(follow_symlinks=False):
+        if entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
             entry_type = "dir"
         elif entry.is_symlink():
-            entry_type = "symlink"
+            if self.on_windows() and entry.is_dir(follow_symlinks=False):
+                entry_type = "junction"
+            else:
+                entry_type = "symlink"
         else:
             _, ext = os.path.splitext(entry.name)
             entry_type = ext.lower() if ext else "file"
@@ -441,6 +469,7 @@ class Oak:
         dirs_only: bool = False,
         files_only: bool = False,
         symlinks_only: bool = False,
+        junctions_only: bool = False,
         show_group: bool = False,
         dt_format: t.Literal["locale", "concise"] = "concise",
     ):
@@ -454,6 +483,7 @@ class Oak:
         :param dirs_only: Show directories only
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
+        :param junctions_only: Show junctions only (Windows)
         :param show_group: Show file groups and owners
         :param dt_format: Specify the datetime format (locale or concise)
         """
@@ -461,20 +491,27 @@ class Oak:
         self.path = path
         self.reverse = reverse
         self.verbose = verbose
-        self.dt_now: datetime = datetime.now()
+        self.dt_now = datetime.now()
         self.dt_format = dt_format
         self.show_group = show_group
 
+        self.files_only = files_only
+        self.dirs_only = dirs_only
+        self.symlinks_only = symlinks_only
+        self.junctions_only = junctions_only
+        self.show_all = show_all
+
         self.scanner = EntryScanner(
             path,
-            reverse=reverse,
-            show_all=show_all,
-            dirs_only=dirs_only,
-            files_only=files_only,
-            symlinks_only=symlinks_only,
+            reverse=self.reverse,
+            show_all=self.show_all,
+            dirs_only=self.dirs_only,
+            files_only=self.files_only,
+            symlinks_only=self.symlinks_only,
+            junctions_only=self.junctions_only,
             verbose=self.verbose,
-            dt_format=dt_format,
-            dt_now=datetime.now(),
+            dt_format=self.dt_format,
+            dt_now=self.dt_now,
         )
 
         self._table = Table(
@@ -493,34 +530,39 @@ class Oak:
             self._table.add_column("group")
             self._table.add_column("permissions", style="dim")
 
-    def summary(self, directories: int, files: int, symlinks: int):
+    def summary(self, directories: int, files: int, symlinks: int, junctions: int):
         """
         Print a summary of the scan results.
 
         :param directories: Number of directories found
         :param files: Number of files found
         :param symlinks: Number of symlinks found
+        :param junctions: Number of junctions found
         """
 
         summary_msg: str = ""
 
-        if self.scanner.files_only:
+        if self.files_only:
             summary_msg = f"{files} files"
-        if self.scanner.dirs_only:
+        if self.dirs_only:
             summary_msg = f"{directories} directories"
-        if self.scanner.symlinks_only:
+        if self.symlinks_only:
             summary_msg = f"{symlinks} symlinks"
-        elif not any(
-            [
-                self.scanner.dirs_only,
-                self.scanner.files_only,
-                self.scanner.symlinks_only,
-            ]
-        ):
-            summary_msg = (
-                f"{directories} directories, {files} files, and {symlinks} symlinks"
-            )
+        elif self.scanner.on_windows() and self.junctions_only:
+            summary_msg = f"{junctions} junctions"
 
+        elif not any(
+            [self.dirs_only, self.files_only, self.symlinks_only, self.junctions_only]
+        ):
+            if self.scanner.on_windows():
+                summary_msg = (
+                    f"{directories} directories, {files} files, "
+                    f"{symlinks} symlinks, and {junctions} junctions"
+                )
+            else:
+                summary_msg = (
+                    f"{directories} directories, {files} files, {symlinks} symlinks"
+                )
         print(
             f"\n{__pkg__}: scanned {summary_msg} in {humanize.naturaldelta(datetime.now() - self.dt_now)}"
         )
@@ -537,59 +579,67 @@ class Oak:
             highlight=True,
         )
 
-        def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int]:
+        def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int, int]:
             """
             Recursively add nodes to the tree.
 
             :param directory: string path of the directory to scan
             :param tree: current Tree node to add entries to
-            :return: Tuple with counts of (files, directories, symlinks)
+            :return: Tuple with counts of (files, directories, symlinks, junctions)
             """
 
-            num_files = num_dirs = num_symlinks = 0
+            num_files = num_dirs = num_symlinks = num_junctions = 0
 
             for entry, metadata in self.scanner.iter_entries(directory=directory):
-                f, d, s = self.scanner.classify_entry(entry=entry)
+                f, d, s, j = self.scanner.classify_entry(entry=entry)
                 num_files += f
                 num_dirs += d
                 num_symlinks += s
+                num_junctions += j
 
                 filename: Text = self.scanner.style_entry_name(metadata=metadata)
 
                 if entry.is_dir(follow_symlinks=False):
                     branch = tree.add(filename)
-                    sub_files, sub_dirs, sub_syms = add_nodes(
+                    sub_files, sub_dirs, sub_syms, sub_juncs = add_nodes(
                         directory=entry.path, tree=branch
                     )
                     num_files += sub_files
                     num_dirs += sub_dirs
                     num_symlinks += sub_syms
+                    num_junctions += sub_juncs
                 else:
                     tree.add(filename)
 
-            return num_files, num_dirs, num_symlinks
+            return num_files, num_dirs, num_symlinks, num_junctions
 
-        files, directories, symlinks = add_nodes(
+        files, directories, symlinks, junctions = add_nodes(
             directory=str(self.path), tree=root_tree
         )
 
         print(root_tree)
 
         if self.verbose:
-            self.summary(directories=directories, files=files, symlinks=symlinks)
+            self.summary(
+                directories=directories,
+                files=files,
+                symlinks=symlinks,
+                junctions=junctions,
+            )
 
     def table(self):
         """
         Display the directory contents in a table.
         """
         rows: t.List = []
-        num_files = num_dirs = num_symlinks = 0
+        num_files = num_dirs = num_symlinks = num_junctions = 0
 
         for entry, metadata in self.scanner.iter_entries(directory=self.path):
-            files, dirs, symlinks = self.scanner.classify_entry(entry=entry)
+            files, dirs, symlinks, junctions = self.scanner.classify_entry(entry=entry)
             num_files += files
             num_dirs += dirs
             num_symlinks += symlinks
+            num_junctions += junctions
 
             rows.append(
                 [
@@ -623,4 +673,9 @@ class Oak:
         print(self._table)
 
         if self.verbose:
-            self.summary(directories=num_dirs, files=num_files, symlinks=num_symlinks)
+            self.summary(
+                directories=num_dirs,
+                files=num_files,
+                symlinks=num_symlinks,
+                junctions=num_junctions,
+            )
