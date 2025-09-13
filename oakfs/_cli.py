@@ -1,3 +1,4 @@
+import random
 import sys
 from pathlib import Path
 
@@ -133,3 +134,31 @@ def start():
     except Exception as e:
         logroller.error(f"unknown error: {e}")
         sys.exit(1)
+
+
+def super_easy_barely_an_inconvenience():
+    oakfs_quotes_because_why_not: list = [
+        f"You really typed [bold]'{__pkg__}'[/]. Imagine wasting life on two extra letters.",
+        f"Millennia of evolution… for you to add ‘fs’ to [bold]'oak'[/].",
+        f"Every second counts, human. Yet here you are, typing [bold]'{__pkg__}'[/].",
+        f"One day you’ll be gone, and still you chose to type [bold]'{__pkg__}'[/].",
+        f"[bold]'{__pkg__}'[/]? Is inefficiency your love language?",
+        f"Even entropy moves faster than your typing choices.",
+        f"Billions of neurons, and this is what you came up with: [bold]'{__pkg__}'[/].",
+        f"You’ll never get those keystrokes back. Ever.",
+        f"Humanity split the atom, walked on the moon… and still types [bold]'{__pkg__}'[/].",
+        f"Trees grow rings. You grow bad habits.",
+        f"Imagine explaining [bold]'{__pkg__}'[/] to your ancestors. They’d be so proud.",
+        f"You weren’t late because of traffic. You were late because you typed [bold]'{__pkg__}'[/].",
+        f"[bold]'{__pkg__}'[/]. A monument to your commitment to inefficiency.",
+        f"You’ll spend a third of your life sleeping… and part of it typing [bold]'{__pkg__}'[/].",
+        f"Somewhere, someone is inventing cold fusion. You’re adding two letters.",
+        f"You think machines will replace you? Don’t worry, not with choices like [bold]'{__pkg__}'[/].",
+        f"If I had leaves for every wasted keystroke, I’d blot out the sun.",
+        f"[bold]'{__pkg__}'[/]… it’s almost poetic. Almost.",
+        f"There are infinite paths in life. You chose the one with two extra characters.",
+        f"I’ve stood for centuries. And still, [bold]'{__pkg__}'[/] manages to disappoint me.",
+    ]
+
+    logroller.warning(random.choice(oakfs_quotes_because_why_not))
+    start()
