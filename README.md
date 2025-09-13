@@ -22,8 +22,6 @@
 - 🔄 **Sorting**: Reverse order with `--reverse`.
 - 🐢 **Verbose mode**: Show progress of scanning with `--verbose`.
 
----
-
 ## 📦 Installation
 
 oakfs is available on [PyPI](https://pypi.org/project/pypi). You can install it using pip:
@@ -33,8 +31,6 @@ pip install oakfs
 ```
 
 This will install `oak` as a CLI command.
-
----
 
 ## 🚀 Usage
 
@@ -68,8 +64,6 @@ oak table ~/projects
 
 If you don’t specify a subcommand, `oakfs` will **prompt you** interactively to pick between `table` and `tree`.
 
----
-
 ## ⚙️ Options
 
 Global options (apply to both commands):
@@ -84,8 +78,6 @@ Global options (apply to both commands):
 | `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
 | `-r, --reverse`                     | reverse sort order                           |
 | `-V, --verbose`                     | enable verbose output                        ||
-
----
 
 ## Example Outputs
 
@@ -117,28 +109,6 @@ Global options (apply to both commands):
 │ 󰍔 README.md               │        3.7 KiB │ 6 seconds ago          │ md     │
 ╰───────────────────────────┴────────────────┴────────────────────────┴────────╯
 ```
-
----
-
-## 🧑‍💻 Development
-
-This project is written in **Python 3.10+** and uses:
-
-- [rich](https://github.com/Textualize/rich)
-- [humanize](https://github.com/jmoiron/humanize)
-- [rich-click](https://github.com/ewels/rich-click)
-
-To run tests or hack on the tool:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-- [rich](https://github.com/Textualize/rich)
-- [humanize](https://github.com/jmoiron/humanize)
-- [rich-click](https://github.com/ewels/rich-click)
-
----
 
 ## 📜 License
 
