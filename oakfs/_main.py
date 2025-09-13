@@ -17,6 +17,8 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
+from . import __pkg__
+
 CWD = Path.cwd()
 
 ENTRY_STYLES: dict = {
@@ -312,7 +314,7 @@ class EntryScanner:
             for entry in entries:
                 if self.verbose:
                     status.update(
-                        f"[bold]processing <{self.entry_type(entry=entry)}>[/]: [dim]{entry.name}[/]"
+                        f"[bold]scanning <{self.entry_type(entry=entry)}>[/]: [dim]{entry.name}[/]"
                     )
 
                 if not self.show_all and entry.name.startswith("."):
@@ -500,11 +502,11 @@ class Oak:
         summary_msg: str = ""
 
         if self.scanner.files_only:
-            summary_msg = f"found {files} files"
+            summary_msg = f"{files} files"
         if self.scanner.dirs_only:
-            summary_msg = f"found {directories} directories"
+            summary_msg = f"{directories} directories"
         if self.scanner.symlinks_only:
-            summary_msg = f"found {symlinks} symlinks"
+            summary_msg = f"{symlinks} symlinks"
         elif not any(
             [
                 self.scanner.dirs_only,
@@ -512,9 +514,13 @@ class Oak:
                 self.scanner.symlinks_only,
             ]
         ):
-            summary_msg = f"found {directories} directories, {files} files, and {symlinks} symlinks"
+            summary_msg = (
+                f"{directories} directories, {files} files, and {symlinks} symlinks"
+            )
 
-        print(f"\n[bold]{summary_msg}[/bold]")
+        print(
+            f"\n{__pkg__}: scanned {summary_msg} in {humanize.naturaldelta(datetime.now() - self.dt_now)}"
+        )
 
     def tree(self):
         """
