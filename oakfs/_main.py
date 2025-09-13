@@ -460,6 +460,7 @@ class Oak:
 
         self.path = path
         self.reverse = reverse
+        self.verbose = verbose
         self.dt_now: datetime = datetime.now()
         self.dt_format = dt_format
         self.show_group = show_group
@@ -471,7 +472,7 @@ class Oak:
             dirs_only=dirs_only,
             files_only=files_only,
             symlinks_only=symlinks_only,
-            verbose=verbose,
+            verbose=self.verbose,
         )
 
         self._table = Table(
@@ -543,13 +544,13 @@ class Oak:
             :return: Tuple with counts of (files, directories, symlinks)
             """
 
-            files_count = dirs_count = symlinks_count = 0
+            num_files = num_dirs = num_symlinks = 0
 
             for entry, metadata in self.scanner.iter_entries(directory=directory):
                 f, d, s = self.scanner.classify_entry(entry=entry)
-                files_count += f
-                dirs_count += d
-                symlinks_count += s
+                num_files += f
+                num_dirs += d
+                num_symlinks += s
 
                 filename: Text = self.scanner.style_entry_name(metadata=metadata)
 
@@ -558,33 +559,35 @@ class Oak:
                     sub_files, sub_dirs, sub_syms = add_nodes(
                         directory=entry.path, tree=branch
                     )
-                    files_count += sub_files
-                    dirs_count += sub_dirs
-                    symlinks_count += sub_syms
+                    num_files += sub_files
+                    num_dirs += sub_dirs
+                    num_symlinks += sub_syms
                 else:
                     tree.add(filename)
 
-            return files_count, dirs_count, symlinks_count
+            return num_files, num_dirs, num_symlinks
 
         files, directories, symlinks = add_nodes(
             directory=str(self.path), tree=root_tree
         )
 
         print(root_tree)
-        self.summary(directories, files, symlinks)
+
+        if self.verbose:
+            self.summary(directories=directories, files=files, symlinks=symlinks)
 
     def table(self):
         """
         Display the directory contents in a table.
         """
         rows: t.List = []
-        files_count = dirs_count = symlinks_count = 0
+        num_files = num_dirs = num_symlinks = 0
 
         for entry, metadata in self.scanner.iter_entries(directory=self.path):
-            f, d, s = self.scanner.classify_entry(entry=entry)
-            files_count += f
-            dirs_count += d
-            symlinks_count += s
+            files, dirs, symlinks = self.scanner.classify_entry(entry=entry)
+            num_files += files
+            num_dirs += dirs
+            num_symlinks += symlinks
 
             rows.append(
                 [
@@ -616,4 +619,6 @@ class Oak:
                 )
 
         print(self._table)
-        self.summary(dirs_count, files_count, symlinks_count)
+
+        if self.verbose:
+            self.summary(directories=num_dirs, files=num_files, symlinks=num_symlinks)

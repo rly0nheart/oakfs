@@ -9,6 +9,7 @@ from ._main import Oak, CWD
 
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["concise", "locale"]
+from rich.prompt import Prompt
 
 
 @click.group(
@@ -61,7 +62,13 @@ def cli(
     ctx.obj["verbose"] = verbose
 
     if ctx.invoked_subcommand is None:
-        ctx.get_usage()
+        # Prompt the user to choose a view if no subcommand is provided
+        choice = Prompt.ask(
+            f"[dim]{__pkg__}[/]: [bold yellow]missing command[/bold yellow]: enter a preferred view",
+            choices=["table", "tree"],
+            default="table",
+        )
+        ctx.invoke(globals()[choice], path=CWD)
 
 
 @cli.command()
@@ -107,11 +114,15 @@ def start():
     try:
         cli(obj={})
     except FileNotFoundError as e:
-        print(f"{__pkg__}: cannot access '{e.filename}': No such file or directory")
+        print(
+            f"[dim]{__pkg__}[/]: cannot access '{e.filename}': No such file or directory"
+        )
         sys.exit(2)
     except PermissionError as e:
-        print(f"{__pkg__}: cannot open directory '{e.filename}': Permission denied")
+        print(
+            f"[dim]{__pkg__}[/]: cannot open directory '{e.filename}': Permission denied"
+        )
         sys.exit(1)
     except Exception as e:
-        print(f"{__pkg__}: error: {e}")
+        print(f"[dim]{__pkg__}[/]: error: {e}")
         sys.exit(1)
