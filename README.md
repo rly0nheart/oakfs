@@ -45,7 +45,7 @@ oak tree [PATH]
 Example:
 
 ```bash
-oakfs tree ~/projects
+oak tree ~/projects
 ```
 
 ### Table view
