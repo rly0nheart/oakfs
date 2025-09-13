@@ -4,6 +4,7 @@ import os
 import pwd
 import stat
 import typing as t
+from contextlib import nullcontext
 from datetime import datetime
 from os import stat_result
 from pathlib import Path
@@ -234,52 +235,116 @@ ENTRY_STYLES: dict = {
 }
 
 
-class Oak:
-    def __init__(self, path: Path, **kwargs: t.Union[bool, t.Any]):
-        self._path = path
-        self._dt_now: datetime = datetime.now()
-        self._reverse = kwargs.get("reverse", False)
-        self._dt_format: t.Literal["locale", "concise"] = kwargs.get(
-            "dt_format", "locale"
+class EntryScanner:
+    def __init__(
+        self,
+        path: Path,
+        *,
+        reverse: bool = False,
+        show_all: bool = False,
+        dirs_only: bool = False,
+        files_only: bool = False,
+        symlinks_only: bool = False,
+        verbose: bool = False,
+        dt_now: datetime | None = None,
+        dt_format: t.Literal["locale", "concise"] = "locale",
+    ):
+        """
+        Initialise the EntryScanner.
+
+        :param path: Path to scan
+        :param reverse: Reverse the sort order
+        :param show_all: Show hidden files and directories
+        :param dirs_only: Show directories only
+        :param files_only: Show files only
+        :param symlinks_only: Show symlinks only
+        :param verbose: Enable verbose output
+        :param dt_now: Current datetime for relative time calculations
+        :param dt_format: Specify the datetime format (locale or concise)
+        """
+        self.path = path
+        self.reverse = reverse
+        self.show_all = show_all
+        self.dirs_only = dirs_only
+        self.files_only = files_only
+        self.symlinks_only = symlinks_only
+        self.verbose = verbose
+        self.dt_now = dt_now or datetime.now()
+        self.dt_format = dt_format
+
+    @staticmethod
+    def entry_type(entry: os.DirEntry) -> str:
+        """
+        Determine the type of a directory entry.
+
+        :param entry: Directory entry to check
+        :return: Type as a string ("dir", "symlink", "file", or "no idea")
+        """
+
+        if entry.is_dir(follow_symlinks=False):
+            return "dir"
+        elif entry.is_symlink():
+            return "symlink"
+        elif entry.is_file(follow_symlinks=False):
+            return "file"
+        elif entry.is_junction():
+            return "junction"
+        else:
+            return "no idea lol"
+
+    def iter_entries(
+        self, directory: t.Union[str, Path]
+    ) -> t.Iterator[t.Tuple[os.DirEntry, t.Dict]]:
+        """
+        Iterate over directory entries, yielding each entry and its metadata.
+
+        :param directory: Directory path to scan
+        :return: Iterator of tuples containing directory entry and its metadata
+        """
+
+        entries: list[os.DirEntry] = list(os.scandir(directory))
+        entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
+
+        status_context = (
+            Status("scanning directory...") if self.verbose else nullcontext()
         )
-        self._show_all = kwargs.get("show_all", False)
-        self._show_group = kwargs.get("show_group", False)
-        self._dirs_only = kwargs.get("dirs_only", False)
-        self._files_only = kwargs.get("files_only", False)
-        self._symlinks_only = kwargs.get("symlinks_only", False)
+        with status_context as status:
+            for entry in entries:
+                if self.verbose:
+                    status.update(
+                        f"[bold]processing <{self.entry_type(entry=entry)}>[/]: [dim]{entry.name}[/]"
+                    )
 
-        self._table = Table(
-            show_header=True,
-            header_style="bold",
-            box=getattr(box, kwargs.get("table_style", "ROUNDED")),
-            highlight=True,
-            expand=True,
-        )
-        self._table.add_column("path", no_wrap=True)
-        self._table.add_column("size", justify="right")
-        self._table.add_column("modified")
-        self._table.add_column("type", style="#B7CAD4")
-        if self._show_group:
-            self._table.add_column("owner")
-            self._table.add_column("group")
-            self._table.add_column("permissions", style="dim")
+                if not self.show_all and entry.name.startswith("."):
+                    continue
+                if self.dirs_only and not entry.is_dir(follow_symlinks=False):
+                    continue
+                if self.files_only and not entry.is_file(follow_symlinks=False):
+                    continue
+                if self.symlinks_only and not entry.is_symlink():
+                    continue
 
-    def summary(self, directories: int, files: int, symlinks: int):
+                yield entry, self.get_entry_metadata(entry=entry)
 
-        summary_msg: str = ""
+    @staticmethod
+    def classify_entry(entry: os.DirEntry) -> t.Tuple[int, int, int]:
+        """
+        Classify the entry as file, directory, or symlink.
 
-        if self._files_only:
-            summary_msg = f"found {files} files"
-        if self._dirs_only:
-            summary_msg = f"found {directories} directories"
-        if self._symlinks_only:
-            summary_msg = f"found {symlinks} symlinks"
-        elif not any([self._dirs_only, self._files_only, self._symlinks_only]):
-            summary_msg = f"found {directories} directories, {files} files, and {symlinks} symlinks"
+        :param entry: Directory entry to classify
+        :return: Tuple with counts of (files, directories, symlinks)
+        """
 
-        print(f"\n[bold]{summary_msg}[/bold]")
+        files = dirs = symlinks = 0
+        if entry.is_file(follow_symlinks=False):
+            files = 1
+        elif entry.is_dir(follow_symlinks=False):
+            dirs = 1
+        elif entry.is_symlink():
+            symlinks = 1
+        return files, dirs, symlinks
 
-    def _get_entry_metadata(self, entry: os.DirEntry[str]) -> dict:
+    def get_entry_metadata(self, entry: os.DirEntry) -> t.Dict:
         """
         Collect metadata from a directory entry.
 
@@ -293,20 +358,20 @@ class Oak:
         mtime: datetime = datetime.fromtimestamp(entry_stat.st_mtime)
         size: str = humanize.naturalsize(entry_stat.st_size, binary=True)
         mod_time = (
-            f"{humanize.naturaltime(self._dt_now - mtime)}"
-            if self._dt_format == "concise"
+            f"{humanize.naturaltime(self.dt_now - mtime)}"
+            if self.dt_format == "concise"
             else mtime.strftime("%c")
         )
         permissions: str = stat.filemode(entry_stat.st_mode)
         try:
             owner = pwd.getpwuid(entry_stat.st_uid).pw_name
         except KeyError:
-            owner = str(stat_result.st_uid)
+            owner = str(entry_stat.st_uid)
 
         try:
             group = grp.getgrgid(entry_stat.st_gid).gr_name
         except KeyError:
-            group = str(stat_result.st_gid)
+            group = str(entry_stat.st_gid)
 
         if entry.is_dir(follow_symlinks=False):
             entry_type = "dir"
@@ -328,10 +393,14 @@ class Oak:
         }
 
     @staticmethod
-    def _set_entry_name(metadata: dict) -> Text:
+    def style_entry_name(metadata: dict) -> Text:
         """
-        Style filename based on its extension or special type.
+        Style the entry name based on its type and extension.
+
+        :param metadata: Metadata dictionary of the entry
+        :return: Styled Text object
         """
+
         entry_type = metadata["type"]
         filename = metadata["filename"]
         extension = os.path.splitext(filename)[1].lower()
@@ -359,8 +428,100 @@ class Oak:
             style=style_info["style"],
         )
 
+
+class Oak:
+    def __init__(
+        self,
+        path: Path,
+        reverse: bool = False,
+        verbose: bool = False,
+        show_all: bool = False,
+        dirs_only: bool = False,
+        files_only: bool = False,
+        symlinks_only: bool = False,
+        show_group: bool = False,
+        dt_format: t.Literal["locale", "concise"] = "locale",
+    ):
+        """
+        Initialise the Oak filesystem visualiser.
+
+        :param path: Path to scan
+        :param reverse: Reverse the sort order
+        :param verbose: Enable verbose output
+        :param show_all: Show hidden files and directories
+        :param dirs_only: Show directories only
+        :param files_only: Show files only
+        :param symlinks_only: Show symlinks only
+        :param show_group: Show file groups and owners
+        :param dt_format: Specify the datetime format (locale or concise)
+        """
+
+        self.path = path
+        self.reverse = reverse
+        self.dt_now: datetime = datetime.now()
+        self.dt_format = dt_format
+        self.show_group = show_group
+
+        self.scanner = EntryScanner(
+            path,
+            reverse=reverse,
+            show_all=show_all,
+            dirs_only=dirs_only,
+            files_only=files_only,
+            symlinks_only=symlinks_only,
+            verbose=verbose,
+        )
+
+        self._table = Table(
+            show_header=True,
+            header_style="bold",
+            box=box.ROUNDED,
+            highlight=True,
+            expand=True,
+        )
+        self._table.add_column("path", no_wrap=True)
+        self._table.add_column("size", justify="right")
+        self._table.add_column("modified")
+        self._table.add_column("type", style="#B7CAD4")
+        if self.show_group:
+            self._table.add_column("owner")
+            self._table.add_column("group")
+            self._table.add_column("permissions", style="dim")
+
+    def summary(self, directories: int, files: int, symlinks: int):
+        """
+        Print a summary of the scan results.
+
+        :param directories: Number of directories found
+        :param files: Number of files found
+        :param symlinks: Number of symlinks found
+        """
+
+        summary_msg: str = ""
+
+        if self.scanner.files_only:
+            summary_msg = f"found {files} files"
+        if self.scanner.dirs_only:
+            summary_msg = f"found {directories} directories"
+        if self.scanner.symlinks_only:
+            summary_msg = f"found {symlinks} symlinks"
+        elif not any(
+            [
+                self.scanner.dirs_only,
+                self.scanner.files_only,
+                self.scanner.symlinks_only,
+            ]
+        ):
+            summary_msg = f"found {directories} directories, {files} files, and {symlinks} symlinks"
+
+        print(f"\n[bold]{summary_msg}[/bold]")
+
     def tree(self):
-        root_name = os.path.basename(os.path.abspath(self._path)) or self._path
+        """
+        Display the directory structure as a tree.
+        """
+
+        root_name = os.path.basename(os.path.abspath(self.path)) or self.path
         root_tree = Tree(
             f"[bold blue] {root_name}[/bold blue]",
             guide_style="dim",
@@ -368,97 +529,69 @@ class Oak:
         )
 
         def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int]:
-            entries: list[os.DirEntry] = list(os.scandir(directory))
-            entries.sort(key=lambda e: e.name.lower(), reverse=self._reverse)
+            """
+            Recursively add nodes to the tree.
 
-            files_count: int = 0
-            dirs_count: int = 0
-            symlinks_count: int = 0
+            :param directory: string path of the directory to scan
+            :param tree: current Tree node to add entries to
+            :return: Tuple with counts of (files, directories, symlinks)
+            """
 
-            for entry in entries:
-                if not self._show_all and entry.name.startswith("."):
-                    continue
-                if self._dirs_only and not entry.is_dir(follow_symlinks=False):
-                    continue
-                if self._files_only and not entry.is_file(follow_symlinks=False):
-                    continue
+            files_count = dirs_count = symlinks_count = 0
 
-                with Status(f"[bold green]processing:[/] {entry.name}"):
-                    if entry.is_file(follow_symlinks=False):
-                        files_count += 1
-                    elif entry.is_dir(follow_symlinks=False):
-                        dirs_count += 1
-                    elif entry.is_symlink():
-                        symlinks_count += 1
+            for entry, metadata in self.scanner.iter_entries(directory=directory):
+                f, d, s = self.scanner.classify_entry(entry=entry)
+                files_count += f
+                dirs_count += d
+                symlinks_count += s
 
-                    metadata = self._get_entry_metadata(entry=entry)
-                    filename = self._set_entry_name(metadata=metadata)
+                filename: Text = self.scanner.style_entry_name(metadata=metadata)
 
-                    if entry.is_dir(follow_symlinks=False):
-                        branch = tree.add(filename)
-                        sub_files, sub_dirs, sub_syms = add_nodes(entry.path, branch)
-                        files_count += sub_files
-                        dirs_count += sub_dirs
-                        symlinks_count += sub_syms
-                    else:
-                        tree.add(filename)
+                if entry.is_dir(follow_symlinks=False):
+                    branch = tree.add(filename)
+                    sub_files, sub_dirs, sub_syms = add_nodes(
+                        directory=entry.path, tree=branch
+                    )
+                    files_count += sub_files
+                    dirs_count += sub_dirs
+                    symlinks_count += sub_syms
+                else:
+                    tree.add(filename)
 
             return files_count, dirs_count, symlinks_count
 
         files, directories, symlinks = add_nodes(
-            directory=str(self._path), tree=root_tree
+            directory=str(self.path), tree=root_tree
         )
 
         print(root_tree)
-        self.summary(directories=directories, files=files, symlinks=symlinks)
+        self.summary(directories, files, symlinks)
 
-    def file(self): ...
     def table(self):
         """
-        List contents of a directory.
+        Display the directory contents in a table.
         """
+        rows: t.List = []
+        files_count = dirs_count = symlinks_count = 0
 
-        entries = list(os.scandir(self._path))
-
-        rows: list = []
-        files_count: int = 0
-        directories_count: int = 0
-        symlinks_count: int = 0
-
-        for entry in entries:
-            if entry.is_dir(follow_symlinks=False):
-                directories_count += 1
-            if entry.is_file(follow_symlinks=False):
-                files_count += 1
-            if entry.is_symlink():
-                symlinks_count += 1
-
-            if not self._show_all and entry.name.startswith("."):
-                continue
-            if self._dirs_only and not entry.is_dir():
-                continue
-            if self._files_only and not entry.is_file():
-                continue
-
-            if self._symlinks_only and not entry.is_symlink():
-                continue
-
-            metadata = self._get_entry_metadata(entry=entry)
+        for entry, metadata in self.scanner.iter_entries(directory=self.path):
+            f, d, s = self.scanner.classify_entry(entry=entry)
+            files_count += f
+            dirs_count += d
+            symlinks_count += s
 
             rows.append(
                 [
                     metadata["filename"],
                     metadata,
-                    self._set_entry_name(metadata=metadata),
+                    self.scanner.style_entry_name(metadata=metadata),
                 ]
             )
 
-        # sort alphabetically by filename
-        rows.sort(key=lambda row: row[0].lower(), reverse=self._reverse)
+        rows.sort(key=lambda row: row[0].lower(), reverse=self.scanner.reverse)
 
-        # add rows to the table
         for _, metadata, filename in rows:
-            if self._show_group:
+            if self.show_group:
                 self._table.add_row(
                     filename,
                     metadata["size"],
@@ -477,6 +610,4 @@ class Oak:
                 )
 
         print(self._table)
-        self.summary(
-            directories=directories_count, files=files_count, symlinks=symlinks_count
-        )
+        self.summary(dirs_count, files_count, symlinks_count)

@@ -34,6 +34,7 @@ DATETIME_FORMAT = ["concise", "locale"]
     "-a", "--all", "_all", is_flag=True, help="show hidden files and directories."
 )
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order.")
+@click.option("-V", "--verbose", is_flag=True, help="enable verbose output.")
 @click.pass_context
 def cli(
     ctx: click.Context,
@@ -44,6 +45,7 @@ def cli(
     reverse: bool,
     group: bool,
     dt_format: str,
+    verbose: bool,
 ):
     """
     oakfs: a cute filesystem visualisation tool... for cute humans 🙂
@@ -56,6 +58,7 @@ def cli(
     ctx.obj["group"] = group
     ctx.obj["dt_format"] = dt_format
     ctx.obj["reverse"] = reverse
+    ctx.obj["verbose"] = verbose
 
     if ctx.invoked_subcommand is None:
         ctx.get_usage()
@@ -78,6 +81,7 @@ def table(
         symlinks_only=ctx.obj["symlinks"],
         show_all=ctx.obj["all"],
         show_group=ctx.obj["group"],
+        verbose=ctx.obj["verbose"],
     )
     oak.table()
 
@@ -94,6 +98,7 @@ def tree(ctx: click.Context, path: Path):
         dirs_only=ctx.obj["dirs"],
         files_only=ctx.obj["files"],
         symlinks_only=ctx.obj["symlinks"],
+        verbose=ctx.obj["verbose"],
     )
     oak.tree()
 
