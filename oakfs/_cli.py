@@ -158,7 +158,7 @@ def super_easy_barely_an_inconvenience():
         f"[bold]'{__pkg__}'[/]… it’s almost poetic. Almost.",
         f"There are infinite paths in life. You chose the one with two extra characters.",
         f"I’ve stood for centuries. And still, [bold]'{__pkg__}'[/] manages to disappoint me.",
-        f"[bold]fs[/] stands for, [bold]fuck\'s sake[/] just write [bold]'oak'[/] like a normal human being.",
+        f"[bold]fs[/] stands for, [bold]fuck’s sake[/] just write [bold]'oak'[/] like a normal human being.",
     ]
 
     logroller.warning(random.choice(oakfs_quotes_because_why_not))
