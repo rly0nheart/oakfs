@@ -242,14 +242,14 @@ class EntryScanner:
         self,
         path: Path,
         *,
-        reverse: bool = False,
-        show_all: bool = False,
-        dirs_only: bool = False,
-        files_only: bool = False,
-        symlinks_only: bool = False,
-        verbose: bool = False,
-        dt_now: datetime | None = None,
-        dt_format: t.Literal["locale", "concise"] = "locale",
+        reverse: bool,
+        show_all: bool,
+        dirs_only: bool,
+        files_only: bool,
+        symlinks_only: bool,
+        verbose: bool,
+        dt_now: datetime,
+        dt_format: t.Literal["locale", "concise"],
     ):
         """
         Initialise the EntryScanner.
@@ -442,7 +442,7 @@ class Oak:
         files_only: bool = False,
         symlinks_only: bool = False,
         show_group: bool = False,
-        dt_format: t.Literal["locale", "concise"] = "locale",
+        dt_format: t.Literal["locale", "concise"] = "concise",
     ):
         """
         Initialise the Oak filesystem visualiser.
@@ -473,6 +473,8 @@ class Oak:
             files_only=files_only,
             symlinks_only=symlinks_only,
             verbose=self.verbose,
+            dt_format=dt_format,
+            dt_now=datetime.now(),
         )
 
         self._table = Table(
@@ -484,7 +486,7 @@ class Oak:
         )
         self._table.add_column("path", no_wrap=True)
         self._table.add_column("size", justify="right")
-        self._table.add_column("modified")
+        self._table.add_column("modified", style="bold")
         self._table.add_column("type", style="#B7CAD4")
         if self.show_group:
             self._table.add_column("owner")

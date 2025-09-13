@@ -24,7 +24,7 @@ from rich.prompt import Prompt
     "-T",
     "--dt-format",
     type=click.Choice(DATETIME_FORMAT),
-    default="locale",
+    default="concise",
     show_default=True,
     help="specify the datetime format.",
 )
@@ -114,15 +114,11 @@ def start():
     try:
         cli(obj={})
     except FileNotFoundError as e:
-        print(
-            f"[dim]{__pkg__}[/]: cannot access '{e.filename}': No such file or directory"
-        )
+        print(f"{__pkg__}: cannot access '{e.filename}': No such file or directory")
         sys.exit(2)
     except PermissionError as e:
-        print(
-            f"[dim]{__pkg__}[/]: cannot open directory '{e.filename}': Permission denied"
-        )
+        print(f"{__pkg__}: cannot open directory '{e.filename}': Permission denied")
         sys.exit(1)
     except Exception as e:
-        print(f"[dim]{__pkg__}[/]: unknown error: {e}")
+        print(f"{__pkg__}: unknown error: {e}")
         sys.exit(1)
