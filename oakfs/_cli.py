@@ -21,7 +21,7 @@ from rich.prompt import Prompt
 @click.option("-d", "--dirs", is_flag=True, help="show directories only.")
 @click.option("-s", "--symlinks", is_flag=True, help="show symlinks only.")
 @click.option(
-    "-t",
+    "-T",
     "--dt-format",
     type=click.Choice(DATETIME_FORMAT),
     default="locale",
