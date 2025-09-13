@@ -4,7 +4,6 @@ import os
 import pwd
 import stat
 import typing as t
-from contextlib import nullcontext
 from datetime import datetime
 from os import stat_result
 from pathlib import Path
@@ -12,12 +11,13 @@ from pathlib import Path
 import humanize
 from rich import box
 from rich import print
+from rich.panel import Panel
 from rich.status import Status
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
-from . import __pkg__
+from . import __project__
 
 CWD = Path.cwd()
 
@@ -237,6 +237,58 @@ ENTRY_STYLES: dict = {
 }
 
 
+class LogRoller:
+    def __init__(self, name: str = __project__):
+        self.name = name
+
+    def _log(self, msg_type: t.Literal["error", "warning", "info"], msg: str):
+        """
+        Internal logging method to display messages with styles.
+
+        :param msg_type: Type of message (error, warning, info)
+        :param msg: Message content
+        """
+
+        styles = {
+            "error": "bold red",
+            "warning": "bold yellow",
+            "info": "bold blue",
+        }
+        panel = Panel(
+            f"{self.name}: {msg}",
+            highlight=True,
+            border_style=styles.get(msg_type, "bold blue"),
+        )
+        print(panel)
+
+    def info(self, msg: str):
+        """
+        Log an informational message.
+
+        :param msg: Message content
+        """
+
+        self._log(msg_type="info", msg=msg)
+
+    def warning(self, msg: str):
+        """
+        Log a warning message.
+
+        :param msg: Message content
+        """
+
+        self._log(msg_type="warning", msg=msg)
+
+    def error(self, msg: str):
+        """
+        Log an error message.
+
+        :param msg: Message content
+        """
+
+        self._log(msg_type="error", msg=msg)
+
+
 class EntryScanner:
     def __init__(
         self,
@@ -248,7 +300,6 @@ class EntryScanner:
         files_only: bool,
         symlinks_only: bool,
         junctions_only: bool,
-        verbose: bool,
         dt_now: datetime,
         dt_format: t.Literal["locale", "concise"],
     ):
@@ -262,7 +313,6 @@ class EntryScanner:
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
-        :param verbose: Enable verbose output
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (locale or concise)
         """
@@ -278,7 +328,6 @@ class EntryScanner:
         self.files_only = files_only
         self.symlinks_only = symlinks_only
         self.junctions_only = junctions_only
-        self.verbose = verbose
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
 
@@ -321,15 +370,11 @@ class EntryScanner:
         entries: list[os.DirEntry] = list(os.scandir(directory))
         entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
 
-        status_context = (
-            Status("scanning directory...") if self.verbose else nullcontext()
-        )
-        with status_context as status:
+        with Status("scanning directory...") as status:
             for entry in entries:
-                if self.verbose:
-                    status.update(
-                        f"[bold]scanning <{self.entry_type(entry=entry)}>[/]: [dim]{entry.name}[/]"
-                    )
+                status.update(
+                    f"[bold]scanning <[italic yellow]{self.entry_type(entry=entry)}[/italic yellow]>[/]: [dim]{entry.name}[/]"
+                )
 
                 if not self.show_all and entry.name.startswith("."):
                     continue
@@ -464,7 +509,6 @@ class Oak:
         self,
         path: Path,
         reverse: bool = False,
-        verbose: bool = False,
         show_all: bool = False,
         dirs_only: bool = False,
         files_only: bool = False,
@@ -478,7 +522,6 @@ class Oak:
 
         :param path: Path to scan
         :param reverse: Reverse the sort order
-        :param verbose: Enable verbose output
         :param show_all: Show hidden files and directories
         :param dirs_only: Show directories only
         :param files_only: Show files only
@@ -490,7 +533,6 @@ class Oak:
 
         self.path = path
         self.reverse = reverse
-        self.verbose = verbose
         self.dt_now = datetime.now()
         self.dt_format = dt_format
         self.show_group = show_group
@@ -509,7 +551,6 @@ class Oak:
             files_only=self.files_only,
             symlinks_only=self.symlinks_only,
             junctions_only=self.junctions_only,
-            verbose=self.verbose,
             dt_format=self.dt_format,
             dt_now=self.dt_now,
         )
@@ -561,10 +602,11 @@ class Oak:
                 )
             else:
                 summary_msg = (
-                    f"{directories} directories, {files} files, {symlinks} symlinks"
+                    f"{directories} directories, {files} files, and {symlinks} symlinks"
                 )
-        print(
-            f"\n{__pkg__}: scanned {summary_msg} in {humanize.naturaldelta(datetime.now() - self.dt_now)}"
+
+        logroller.info(
+            f"scanned {summary_msg} in {humanize.naturaldelta(datetime.now() - self.dt_now)}.",
         )
 
     def tree(self):
@@ -619,13 +661,12 @@ class Oak:
 
         print(root_tree)
 
-        if self.verbose:
-            self.summary(
-                directories=directories,
-                files=files,
-                symlinks=symlinks,
-                junctions=junctions,
-            )
+        self.summary(
+            directories=directories,
+            files=files,
+            symlinks=symlinks,
+            junctions=junctions,
+        )
 
     def table(self):
         """
@@ -672,10 +713,12 @@ class Oak:
 
         print(self._table)
 
-        if self.verbose:
-            self.summary(
-                directories=num_dirs,
-                files=num_files,
-                symlinks=num_symlinks,
-                junctions=num_junctions,
-            )
+        self.summary(
+            directories=num_dirs,
+            files=num_files,
+            symlinks=num_symlinks,
+            junctions=num_junctions,
+        )
+
+
+logroller = LogRoller()

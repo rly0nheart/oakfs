@@ -75,7 +75,6 @@ Global options (apply to both commands):
 | `-g, --group`                       | show file owner, group, and permissions      |
 | `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
 | `-r, --reverse`                     | reverse sort order                           |
-| `-V, --verbose`                     | enable verbose output                        ||
 
 ## Example Outputs
 

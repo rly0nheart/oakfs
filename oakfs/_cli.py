@@ -2,10 +2,9 @@ import sys
 from pathlib import Path
 
 import rich_click as click
-from rich import print
 
-from . import __pkg__, __version__
-from ._main import Oak, CWD
+from . import __version__, __pkg__, __project__
+from ._main import logroller, Oak, CWD
 
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["concise", "locale"]
@@ -67,7 +66,7 @@ def cli(
     if ctx.invoked_subcommand is None:
         # Prompt the user to choose a view if no subcommand is provided
         choice = Prompt.ask(
-            f"[dim]{__pkg__}[/]: [bold yellow]missing command[/bold yellow]: enter a preferred view",
+            f"[dim]{__project__}[/]: [bold yellow]missing command[/bold yellow]: enter a preferred view",
             choices=["table", "tree"],
             default="table",
         )
@@ -92,7 +91,6 @@ def table(
         junctions_only=ctx.obj["junctions"],
         show_all=ctx.obj["all"],
         show_group=ctx.obj["group"],
-        verbose=ctx.obj["verbose"],
     )
     oak.table()
 
@@ -110,17 +108,28 @@ def tree(ctx: click.Context, path: Path):
         files_only=ctx.obj["files"],
         symlinks_only=ctx.obj["symlinks"],
         junctions_only=ctx.obj["junctions"],
-        verbose=ctx.obj["verbose"],
     )
     oak.tree()
 
 
 def start():
+    """
+    Entry point for the CLI.
+    Handles exceptions and provides user-friendly error messages.
+    """
     try:
         cli(obj={})
     except FileNotFoundError as e:
-        print(f"{__pkg__}: cannot access '{e.filename}': No such file or directory")
+        logroller.warning(
+            f"cannot access '{e.filename}': [bold]no such file or directory[/]",
+        )
         sys.exit(2)
     except PermissionError as e:
-        print(f"{__pkg__}: cannot open directory '{e.filename}': Permission denied")
+        logroller.warning(
+            f"cannot open directory '{e.filename}': [bold]permission denied[/]",
+        )
+        sys.exit(1)
+
+    except Exception as e:
+        logroller.error(f"unknown error: {e}")
         sys.exit(1)
