@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="intro.png" alt="oakfs logo" width="350"/>
+  <img src="img/intro.png" alt="oakfs logo" width="350"/>
   <br>
   <strong>oakfs</strong> is a cute filesystem visualisation tool... for cute humans 🙂.<br/>
   It provides a colorful, human-friendly way to explore your filesystem in the terminal using either a <b>tree view</b> or a <b>table view</b>.
@@ -78,36 +78,12 @@ Global options (apply to both commands):
 | `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
 | `-r, --reverse`                     | reverse sort order                           |
 
-## Example Outputs
+## 🖼️ Screenshots
 
-### Tree
-
-```
- oakfs
-├──  LICENSE
-├──  oakfs
-│   ├──  __init__.py
-│   ├──  _cli.py
-│   └──  _main.py
-├── 󰌾 poetry.lock
-├──  pyproject.toml
-└── 󰍔 README.md
-
-```
-
-### Table
-
-```
-╭───────────────────────────┬────────────────┬────────────────────────┬────────╮
-│ path                      │           size │ modified               │ type   │
-├───────────────────────────┼────────────────┼────────────────────────┼────────┤
-│  LICENSE                 │        1.1 KiB │ a day ago              │ file   │
-│  oakfs                   │       74 Bytes │ 12 minutes ago         │ dir    │
-│ 󰌾 poetry.lock             │        5.6 KiB │ 5 hours ago            │ lock   │
-│  pyproject.toml          │      530 Bytes │ 5 hours ago            │ toml   │
-│ 󰍔 README.md               │        3.7 KiB │ 6 seconds ago          │ md     │
-╰───────────────────────────┴────────────────┴────────────────────────┴────────╯
-```
+<div style="display: flex; gap: 10px;">
+  <img src="img/tree.png" alt="tree" style="width: 600px;">
+  <img src="img/table.png" alt="table" style="width: 600px;">
+</div>
 
 ## 📜 License
 
