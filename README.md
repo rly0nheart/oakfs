@@ -5,8 +5,6 @@
   It provides a colorful, human-friendly way to explore your filesystem in the terminal using either a <b>tree view</b> or a <b>table view</b>.
 </p>
 
----
-
 ## ✨ Features
 
 - 🌳 **Tree view**: Visualise your filesystem hierarchy like `tree` but prettier.
@@ -139,12 +137,6 @@ pip install -r requirements-dev.txt
 - [rich](https://github.com/Textualize/rich)
 - [humanize](https://github.com/jmoiron/humanize)
 - [rich-click](https://github.com/ewels/rich-click)
-
-To run tests or hack on the tool:
-
-```bash
-pip install -r requirements-dev.txt
-```
 
 ---
 
