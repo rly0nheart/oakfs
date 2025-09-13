@@ -1,4 +1,6 @@
 <p align="center">
+  <img src="intro.png" alt="oakfs logo" width="350"/>
+  <br>
   <strong>oakfs</strong> is a cute filesystem visualisation tool... for cute humans 🙂.<br/>
   It provides a colorful, human-friendly way to explore your filesystem in the terminal using either a <b>tree view</b> or a <b>table view</b>.
 </p>
