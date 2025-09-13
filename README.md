@@ -78,13 +78,6 @@ Global options (apply to both commands):
 | `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
 | `-r, --reverse`                     | reverse sort order                           |
 
-## 🖼️ Screenshots
-
-<p align="center">
-    <img src="img/tree.png" alt="tree" style="width: 600px;">
-    <img src="img/table.png" alt="table" style="width: 600px;">
-</p>
-
 ## 📜 License
 
 MIT License.  
