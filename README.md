@@ -80,10 +80,8 @@ Global options (apply to both commands):
 
 ## 🖼️ Screenshots
 
-<div style="display: flex; gap: 10px;">
-  <img src="img/tree.png" alt="tree" style="width: 600px;">
-  <img src="img/table.png" alt="table" style="width: 600px;">
-</div>
+![tree](img/tree.png)
+![table](img/table.png)
 
 ## 📜 License
 
