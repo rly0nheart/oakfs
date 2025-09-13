@@ -71,13 +71,13 @@ def table(
     """Show files and directories in a table."""
     oak = Oak(
         path=path,
-        dirs=ctx.obj["dirs"],
-        files=ctx.obj["files"],
-        symlinks_only=ctx.obj["symlinks"],
         reverse=ctx.obj["reverse"],
+        dt_format=ctx.obj["dt_format"],
+        dirs_only=ctx.obj["dirs"],
+        files_only=ctx.obj["files"],
+        symlinks_only=ctx.obj["symlinks"],
         show_all=ctx.obj["all"],
         show_group=ctx.obj["group"],
-        dt_format=ctx.obj["dt_format"],
     )
     oak.table()
 
@@ -91,8 +91,8 @@ def tree(ctx: click.Context, path: Path):
         path=path,
         reverse=ctx.obj["reverse"],
         show_all=ctx.obj["all"],
-        dirs=ctx.obj["dirs"],
-        files=ctx.obj["files"],
+        dirs_only=ctx.obj["dirs"],
+        files_only=ctx.obj["files"],
         symlinks_only=ctx.obj["symlinks"],
     )
     oak.tree()

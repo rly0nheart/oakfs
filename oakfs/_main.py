@@ -238,15 +238,15 @@ class Oak:
     def __init__(self, path: Path, **kwargs: t.Union[bool, t.Any]):
         self._path = path
         self._dt_now: datetime = datetime.now()
-        self._show_all = kwargs.get("_all", False)
-        self._show_group = kwargs.get("group", False)
-        self._dirs_only = kwargs.get("dirs", False)
-        self._files_only = kwargs.get("files", False)
-        self._symlinks_only = kwargs.get("symlinks", False)
         self._reverse = kwargs.get("reverse", False)
         self._dt_format: t.Literal["locale", "concise"] = kwargs.get(
             "dt_format", "locale"
         )
+        self._show_all = kwargs.get("show_all", False)
+        self._show_group = kwargs.get("show_group", False)
+        self._dirs_only = kwargs.get("dirs_only", False)
+        self._files_only = kwargs.get("files_only", False)
+        self._symlinks_only = kwargs.get("symlinks_only", False)
 
         self._table = Table(
             show_header=True,
