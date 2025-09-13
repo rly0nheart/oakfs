@@ -124,5 +124,5 @@ def start():
         )
         sys.exit(1)
     except Exception as e:
-        print(f"[dim]{__pkg__}[/]: error: {e}")
+        print(f"[dim]{__pkg__}[/]: unknown error: {e}")
         sys.exit(1)
