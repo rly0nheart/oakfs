@@ -1,5 +1,3 @@
-<h1 align="center">Oakfs</h1>
-
 <p align="center">
   <strong>oakfs</strong> is a cute filesystem visualisation tool... for cute humans 🙂.<br/>
   It provides a colorful, human-friendly way to explore your filesystem in the terminal using either a <b>tree view</b> or a <b>table view</b>.
