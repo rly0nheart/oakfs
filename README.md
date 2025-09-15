@@ -5,10 +5,6 @@
   It provides a colorful, human-friendly way to explore your filesystem in the terminal using either a <b>tree view</b> or a <b>table view</b>.
 </p>
 
-> [!Note]
-> To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
-> the [Nerd Fonts website](https://www.nerdfonts.com/) for instructions on how to install them.
-
 ## ✨ Features
 
 - 🌳 **Tree view**: Visualise your filesystem hierarchy like `tree` but prettier.
@@ -25,6 +21,10 @@
 - 🕒 **Timestamps**: Choose between `concise` relative times (`3 minutes ago`) or `locale` formatted dates.
 - 🔄 **Sorting**: Reverse order with `--reverse`.
 - 🐢 **Verbose mode**: Show progress of scanning with `--verbose`.
+
+> [!Note]
+> To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
+> the [Nerd Fonts website](https://www.nerdfonts.com/) for instructions on how to install them.
 
 ## 📦 Installation
 
