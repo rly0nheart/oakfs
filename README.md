@@ -66,7 +66,7 @@ oak table ~/projects
 
 ### No subcommand? No problem!
 
-If you don’t specify a subcommand, `oakfs` will **prompt you** interactively to pick between `table` and `tree`.
+If you don’t specify a subcommand, `oak` will **prompt you** interactively to pick between `table` and `tree`.
 
 ## ⚙️ Options
 

@@ -51,7 +51,7 @@ def cli(
     verbose: bool,
 ):
     """
-    oakfs: a cute filesystem visualisation tool... for cute humans 🙂
+    oak: a cute filesystem visualisation tool... for cute humans 🙂
     """
     ctx.ensure_object(dict)
     ctx.obj["dirs"] = dirs
@@ -152,7 +152,7 @@ def super_easy_barely_an_inconvenience():
         f"you weren’t late because of traffic. You were late because you typed [bold]'{__pkg__}'[/].",
         f"[bold]'{__pkg__}'[/]. a monument to your commitment to inefficiency.",
         f"you’ll spend a third of your life sleeping… and part of it typing [bold]'{__pkg__}'[/].",
-        f"somewhere, someone is inventing cold fusion. You’re adding two letters.",
+        f"somewhere, someone is inventing cold fusion. You’re adding two letters to 'oak'.",
         f"you think machines will replace you? Don’t worry, not with choices like [bold]'{__pkg__}'[/].",
         f"if I had leaves for every wasted keystroke, I’d blot out the sun.",
         f"[bold]'{__pkg__}'[/]… it’s almost poetic. almost.",
