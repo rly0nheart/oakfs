@@ -22,6 +22,10 @@
 - 🔄 **Sorting**: Reverse order with `--reverse`.
 - 🐢 **Verbose mode**: Show progress of scanning with `--verbose`.
 
+![Note]
+> To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
+> the [Nerd Fonts website](https://www.nerdfonts.com/) for instructions on how to install them.
+
 ## 📦 Installation
 
 oakfs is available on [PyPI](https://pypi.org/project/pypi). You can install it using pip:
