@@ -78,7 +78,6 @@ Global options (apply to both commands):
 | `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
 | `-r, --reverse`                     | reverse sort order                           |
 
-## 📜 License
-
-MIT License.  
-Feel free to fork, hack, and make it cuter 💖.
+<p align="center">
+  <strong>ok. that's all (for now).</strong>
+</p>

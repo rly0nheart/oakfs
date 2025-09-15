@@ -121,12 +121,12 @@ def start():
     try:
         cli(obj={})
     except FileNotFoundError as e:
-        logroller.warning(
+        logroller.error(
             f"cannot access '{e.filename}': [bold]no such file or directory[/]",
         )
         sys.exit(2)
     except PermissionError as e:
-        logroller.warning(
+        logroller.error(
             f"cannot open directory '{e.filename}': [bold]permission denied[/]",
         )
         sys.exit(1)
@@ -138,26 +138,26 @@ def start():
 
 def super_easy_barely_an_inconvenience():
     oakfs_quotes_because_why_not: list = [
-        f"You really typed [bold]'{__pkg__}'[/]. Imagine wasting life on two extra letters.",
-        f"Millennia of evolution… for you to add ‘fs’ to [bold]'oak'[/].",
-        f"Every second counts, human. Yet here you are, typing [bold]'{__pkg__}'[/].",
-        f"One day you’ll be gone, and still you chose to type [bold]'{__pkg__}'[/].",
-        f"[bold]'{__pkg__}'[/]? Is inefficiency your love language?",
-        f"Even entropy moves faster than your typing choices.",
-        f"Billions of neurons, and this is what you came up with: [bold]'{__pkg__}'[/].",
-        f"You’ll never get those keystrokes back. Ever.",
-        f"Humanity split the atom, walked on the moon… and still types [bold]'{__pkg__}'[/].",
-        f"Trees grow rings. You grow bad habits.",
-        f"Imagine explaining [bold]'{__pkg__}'[/] to your ancestors. They’d be so proud.",
-        f"You weren’t late because of traffic. You were late because you typed [bold]'{__pkg__}'[/].",
-        f"[bold]'{__pkg__}'[/]. A monument to your commitment to inefficiency.",
-        f"You’ll spend a third of your life sleeping… and part of it typing [bold]'{__pkg__}'[/].",
-        f"Somewhere, someone is inventing cold fusion. You’re adding two letters.",
-        f"You think machines will replace you? Don’t worry, not with choices like [bold]'{__pkg__}'[/].",
-        f"If I had leaves for every wasted keystroke, I’d blot out the sun.",
-        f"[bold]'{__pkg__}'[/]… it’s almost poetic. Almost.",
-        f"There are infinite paths in life. You chose the one with two extra characters.",
-        f"I’ve stood for centuries. And still, [bold]'{__pkg__}'[/] manages to disappoint me.",
+        f"you really typed [bold]'{__pkg__}'[/]. Imagine wasting life on two extra letters.",
+        f"millennia of evolution… for you to add ‘fs’ to [bold]'oak'[/].",
+        f"every second counts, human. Yet here you are, typing [bold]'{__pkg__}'[/].",
+        f"one day you’ll be gone, and still you chose to type [bold]'{__pkg__}'[/].",
+        f"[bold]'{__pkg__}'[/]? is inefficiency your love language?",
+        f"even entropy moves faster than your typing choices.",
+        f"billions of neurons, and this is what you came up with: [bold]'{__pkg__}'[/].",
+        f"you’ll never get those keystrokes back. Ever.",
+        f"humanity split the atom, walked on the moon… and still types [bold]'{__pkg__}'[/].",
+        f"trees grow rings. You grow bad habits.",
+        f"imagine explaining [bold]'{__pkg__}'[/] to your ancestors. They’d be so proud.",
+        f"you weren’t late because of traffic. You were late because you typed [bold]'{__pkg__}'[/].",
+        f"[bold]'{__pkg__}'[/]. a monument to your commitment to inefficiency.",
+        f"you’ll spend a third of your life sleeping… and part of it typing [bold]'{__pkg__}'[/].",
+        f"somewhere, someone is inventing cold fusion. You’re adding two letters.",
+        f"you think machines will replace you? Don’t worry, not with choices like [bold]'{__pkg__}'[/].",
+        f"if I had leaves for every wasted keystroke, I’d blot out the sun.",
+        f"[bold]'{__pkg__}'[/]… it’s almost poetic. almost.",
+        f"there are infinite paths in life. You chose the one with two extra characters.",
+        f"i’ve stood for centuries. And still, [bold]'{__pkg__}'[/] manages to disappoint me.",
         f"[bold]fs[/] stands for, [bold]fuck’s sake[/] just write [bold]'oak'[/] like a normal human being.",
     ]
 
