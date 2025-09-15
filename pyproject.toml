@@ -1,6 +1,6 @@
 [project]
 name = "oakfs"
-version = "0.1.0"
+version = "0.1.1"
 description = "A cute filesystem visualisation tool, for cute humans 🙂"
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
@@ -8,6 +8,16 @@ authors = [
 license = { text = "MIT" }
 readme = "README.md"
 repository = "https://github.com/rly0nheart/oakfs"
+homepage = "https://github.com/rly0nheart/oakfs"
+keywords = ["filesystem", "visualisation", "cli", "tool"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English"
+]
 requires-python = ">=3.13"
 dependencies = [
     "humanize (>=4.13.0,<5.0.0)",
