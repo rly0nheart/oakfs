@@ -1,116 +1,91 @@
 import random
 import sys
+import typing as t
 from pathlib import Path
 
 import rich_click as click
 
-from . import __version__, __pkg__, __project__
-from ._main import logroller, Oak, CWD
+from . import __pkg__, __version__
+from ._logroller import LogRoller
+from ._oak import Oak, CWD
 
+logroller = LogRoller()
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
-DATETIME_FORMAT = ["concise", "locale"]
-from rich.prompt import Prompt
+DATETIME_FORMAT = ["relative", "locale"]
 
 
-@click.group(
-    invoke_without_command=True,
-    no_args_is_help=False,
+@click.command(
+    no_args_is_help=False, context_settings=dict(help_option_names=["-h", "--help"])
 )
-@click.version_option(__version__, prog_name=__pkg__)
-@click.option("-f", "--files", is_flag=True, help="show files only.")
-@click.option("-d", "--dirs", is_flag=True, help="show directories only.")
-@click.option("-s", "--symlinks", is_flag=True, help="show symlinks only.")
-@click.option("-j", "--junctions", is_flag=True, help="show junctions only (Windows).")
+@click.argument("path", type=click.Path(path_type=Path, resolve_path=True), default=CWD)
 @click.option(
-    "-T",
+    "-t", "--tree", is_flag=True, help="show filesystem hierarchy as a tree structure"
+)
+@click.option(
+    "-a", "--all", "_all", is_flag=True, help="show hidden files and directories"
+)
+@click.option("-d", "--directories", is_flag=True, help="show directories only")
+@click.option("-f", "--files", is_flag=True, help="show files only")
+@click.option("-j", "--junctions", is_flag=True, help="show junctions only <Windows>")
+@click.option("-s", "--symlinks", is_flag=True, help="show symlinks only")
+@click.option(
+    "-g", "--groups", is_flag=True, help="show file groups and owners <Table>"
+)
+@click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
+@click.option(
     "--dt-format",
     type=click.Choice(DATETIME_FORMAT),
-    default="concise",
+    default="relative",
     show_default=True,
     help="specify the datetime format.",
 )
 @click.option(
-    "-g", "--group", is_flag=True, help="show file groups and owners in the table."
+    "--table-style",
+    type=click.Choice(TABLE_STYLES),
+    default="ROUNDED",
+    show_default=True,
+    help="table border style",
 )
-@click.option(
-    "-a", "--all", "_all", is_flag=True, help="show hidden files and directories."
-)
-@click.option("-r", "--reverse", is_flag=True, help="reverse the sort order.")
-@click.option("-V", "--verbose", is_flag=True, help="enable verbose output.")
-@click.pass_context
+@click.version_option(__version__, prog_name=__pkg__)
 def cli(
-    ctx: click.Context,
-    dirs: bool,
+    path: Path,
+    tree: bool,
+    directories: bool,
     files: bool,
     symlinks: bool,
     junctions: bool,
     _all: bool,
     reverse: bool,
-    group: bool,
-    dt_format: str,
-    verbose: bool,
+    groups: bool,
+    dt_format: t.Literal["relative", "locale"],
+    table_style: t.Literal[
+        "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
+    ],
 ):
     """
     oak: a cute filesystem visualisation tool... for cute humans 🙂
     """
-    ctx.ensure_object(dict)
-    ctx.obj["dirs"] = dirs
-    ctx.obj["files"] = files
-    ctx.obj["symlinks"] = symlinks
-    ctx.obj["junctions"] = junctions
-    ctx.obj["all"] = _all
-    ctx.obj["group"] = group
-    ctx.obj["dt_format"] = dt_format
-    ctx.obj["reverse"] = reverse
-    ctx.obj["verbose"] = verbose
 
-    if ctx.invoked_subcommand is None:
-        # Prompt the user to choose a view if no subcommand is provided
-        choice = Prompt.ask(
-            f"[dim]{__project__}[/]: [bold yellow]missing command[/bold yellow]: enter a preferred view",
-            choices=["table", "tree"],
-            default="table",
-        )
-        ctx.invoke(globals()[choice], path=CWD)
-
-
-@cli.command()
-@click.argument("path", type=click.Path(path_type=Path, resolve_path=True), default=CWD)
-@click.pass_context
-def table(
-    ctx: click.Context,
-    path: Path,
-):
-    """Show files and directories in a table."""
     oak = Oak(
         path=path,
-        reverse=ctx.obj["reverse"],
-        dt_format=ctx.obj["dt_format"],
-        dirs_only=ctx.obj["dirs"],
-        files_only=ctx.obj["files"],
-        symlinks_only=ctx.obj["symlinks"],
-        junctions_only=ctx.obj["junctions"],
-        show_all=ctx.obj["all"],
-        show_group=ctx.obj["group"],
+        reverse=reverse,
+        groups=groups,
+        show_all=_all,
+        dirs_only=directories,
+        files_only=files,
+        symlinks_only=symlinks,
+        junctions_only=junctions,
+        dt_format=dt_format,
+        table_style=table_style,
     )
-    oak.table()
 
-
-@cli.command()
-@click.argument("path", type=click.Path(path_type=Path, resolve_path=True), default=CWD)
-@click.pass_context
-def tree(ctx: click.Context, path: Path):
-    """Show files and directories in a tree."""
-    oak = Oak(
-        path=path,
-        reverse=ctx.obj["reverse"],
-        show_all=ctx.obj["all"],
-        dirs_only=ctx.obj["dirs"],
-        files_only=ctx.obj["files"],
-        symlinks_only=ctx.obj["symlinks"],
-        junctions_only=ctx.obj["junctions"],
-    )
-    oak.tree()
+    if path.is_dir() and not any(path.iterdir()):
+        logroller.info(f"directory is empty: {path}")
+    else:
+        if tree:
+            oak.tree()
+        else:
+            oak.table()
 
 
 def start():
@@ -137,7 +112,7 @@ def start():
 
 
 def super_easy_barely_an_inconvenience():
-    oakfs_quotes_because_why_not: list = [
+    oak_quotes_because_why_not: list = [
         f"you really typed [bold]'{__pkg__}'[/]. Imagine wasting life on two extra letters.",
         f"millennia of evolution… for you to add ‘fs’ to [bold]'oak'[/].",
         f"every second counts, human. Yet here you are, typing [bold]'{__pkg__}'[/].",
@@ -161,5 +136,5 @@ def super_easy_barely_an_inconvenience():
         f"[bold]fs[/] stands for, [bold]fuck’s sake[/] just write [bold]'oak'[/] like a normal human being.",
     ]
 
-    logroller.warning(random.choice(oakfs_quotes_because_why_not))
+    logroller.warning(random.choice(oak_quotes_because_why_not))
     start()

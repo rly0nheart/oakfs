@@ -5,25 +5,15 @@ import pwd
 import stat
 import typing as t
 from datetime import datetime
-from os import stat_result
 from pathlib import Path
 
 import humanize
-from rich import box
-from rich import print
-from rich.panel import Panel
 from rich.status import Status
-from rich.table import Table
 from rich.text import Text
-from rich.tree import Tree
-
-from . import __project__
-
-CWD = Path.cwd()
 
 ENTRY_STYLES: dict = {
     "special": {
-        "dir": {"style": "bold blue", "icon": ""},
+        "directory": {"style": "bold blue", "icon": ""},
         "symlink": {"style": "blue underline", "icon": ""},
         "file": {"style": "dim white", "icon": ""},
         "other": {"style": "dim", "icon": ""},
@@ -40,8 +30,9 @@ ENTRY_STYLES: dict = {
                 ".log",
                 ".pub",
             ],
-            "style": "#B7CAD4",
+            "style": "#7193FF",
             "icon": "",
+            "filetypes": ["plaintext"],
         },
         {
             "extensions": [
@@ -63,11 +54,13 @@ ENTRY_STYLES: dict = {
             ],
             "style": "#7193FF",
             "icon": "",
+            "filetypes": ["database"],
         },
         {
             "extensions": [".odt", ".epub"],
             "style": "yellow",
             "icon": "",
+            "filetypes": ["document", "ebook"],
         },
         {
             "extensions": [
@@ -236,57 +229,149 @@ ENTRY_STYLES: dict = {
     ],
 }
 
-
-class LogRoller:
-    def __init__(self, name: str = __project__):
-        self.name = name
-
-    def _log(self, msg_type: t.Literal["error", "warning", "info"], msg: str):
-        """
-        Internal logging method to display messages with styles.
-
-        :param msg_type: Type of message (error, warning, info)
-        :param msg: Message content
-        """
-
-        styles = {
-            "error": "bold red",
-            "warning": "bold yellow",
-            "info": "bold blue",
-        }
-        panel = Panel(
-            f"{self.name}: {msg}",
-            highlight=True,
-            border_style=styles.get(msg_type, "bold blue"),
-        )
-        print(panel)
-
-    def info(self, msg: str):
-        """
-        Log an informational message.
-
-        :param msg: Message content
-        """
-
-        self._log(msg_type="info", msg=msg)
-
-    def warning(self, msg: str):
-        """
-        Log a warning message.
-
-        :param msg: Message content
-        """
-
-        self._log(msg_type="warning", msg=msg)
-
-    def error(self, msg: str):
-        """
-        Log an error message.
-
-        :param msg: Message content
-        """
-
-        self._log(msg_type="error", msg=msg)
+FILETYPE_MAP: dict[str, list[str]] = {
+    # Textual
+    "plaintext": [".txt", ".rst", ".rtf", ".pub"],
+    "config": [".xml", ".ini", ".cfg", ".toml", ".iml", ".yml", ".yaml"],
+    "log": [".log"],
+    # Data / structured
+    "database": [
+        ".plist",
+        ".db",
+        ".db3",
+        ".sqlite",
+        ".sqlite3",
+        ".sql",
+        ".mdb",
+        ".accdb",
+        ".parquet",
+        ".avro",
+        ".orc",
+        ".hdf5",
+        ".h5",
+        ".msgpack",
+        ".tsv",
+    ],
+    "json": [".json", ".jsonl", ".ndjson"],
+    "markdown": [".md"],
+    "ssh": [".pub", ".pem", ".key"],
+    "record": [".csv"],
+    # Documents
+    "document": [".docx", ".doc", ".odt", ".pdf", ".tex"],
+    "spreadsheet": [".xlsx", ".xls"],
+    "presentation": [".pptx", ".ppt"],
+    "ebook": [".epub"],
+    # Media
+    "image": [
+        ".jpg",
+        ".ico",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".svg",
+        ".tiff",
+        ".webp",
+        ".heic",
+        ".psd",
+        ".xcf",
+        ".cr2",
+        ".nef",
+        ".arw",
+        ".orf",
+        ".rw2",
+    ],
+    "video": [
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".webm",
+        ".flv",
+        ".mpeg",
+        ".mpg",
+        ".3gp",
+    ],
+    "audio": [
+        ".mp3",
+        ".wav",
+        ".flac",
+        ".aac",
+        ".ogg",
+        ".m4a",
+        ".wma",
+        ".alac",
+        ".aiff",
+        ".opus",
+        ".pcm",
+        ".dsd",
+        ".mid",
+        ".midi",
+        ".aifc",
+        ".caf",
+    ],
+    "archive": [
+        ".zip",
+        ".tar",
+        ".gz",
+        ".rar",
+        ".7z",
+        ".bz2",
+        ".xz",
+        ".tgz",
+        ".tbz2",
+        ".txz",
+        ".zst",
+        ".lzma",
+        ".cab",
+        ".arj",
+        ".lzh",
+        ".z",
+        ".jar",
+        ".cpio",
+    ],
+    "binary": [".bin", ".so", ".dylib", ".out"],
+    "executable": [".exe", ".bat", ".cmd", ".dll"],
+    "diskimage": [".iso", ".dmg"],
+    "package": [".ipa", ".app", ".pkg", ".apk", ".xapk"],
+    "checksum": [".md5", ".sha1", ".sha256", ".sha512", ".sfv"],
+    "signature": [".sig", ".asc", ".gpg", ".pgp"],
+    "header": [".h", ".hh", ".hpp", ".hxx"],
+    "code": [
+        ".py",
+        ".pyi",
+        ".pyc",
+        ".ps1",
+        ".js",
+        ".mjs",
+        ".cjs",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".java",
+        ".c",
+        ".cc",
+        ".cpp",
+        ".cs",
+        ".go",
+        ".php",
+        ".rb",
+        ".rs",
+        ".kt",
+        ".swift",
+        ".pl",
+        ".sh",
+        ".zsh",
+        ".html",
+        ".css",
+        ".scss",
+    ],
+    # Misc
+    "socket": [".sock"],
+    "desktop": [".desktop"],
+    "lockfile": [".lock"],
+}
 
 
 class EntryScanner:
@@ -301,7 +386,7 @@ class EntryScanner:
         symlinks_only: bool,
         junctions_only: bool,
         dt_now: datetime,
-        dt_format: t.Literal["locale", "concise"],
+        dt_format: t.Literal["locale", "relative"],
     ):
         """
         Initialise the EntryScanner.
@@ -314,7 +399,7 @@ class EntryScanner:
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
         :param dt_now: Current datetime for relative time calculations
-        :param dt_format: Specify the datetime format (locale or concise)
+        :param dt_format: Specify the datetime format (locale or relative)
         """
 
         # disable junction filtering on non-Windows
@@ -338,25 +423,6 @@ class EntryScanner:
         """
         return os.name == "nt"
 
-    def entry_type(self, entry: os.DirEntry) -> str:
-        """
-        Determine the type of a directory entry.
-
-        :param entry: Directory entry to check
-        :return: Type as a string ("dir", "symlink", "file", or "no idea")
-        """
-
-        if entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
-            return "dir"
-        elif entry.is_symlink():
-            if self.on_windows() and entry.is_dir(follow_symlinks=False):
-                return "junction"
-            return "symlink"
-        elif entry.is_file(follow_symlinks=False):
-            return "file"
-        else:
-            return "do idea, lol"
-
     def iter_entries(
         self, directory: t.Union[str, Path]
     ) -> t.Iterator[t.Tuple[os.DirEntry, t.Dict]]:
@@ -370,10 +436,10 @@ class EntryScanner:
         entries: list[os.DirEntry] = list(os.scandir(directory))
         entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
 
-        with Status("scanning directory...") as status:
+        with Status("wait...") as status:
             for entry in entries:
                 status.update(
-                    f"[bold]scanning <[italic yellow]{self.entry_type(entry=entry)}[/italic yellow]>[/]: [dim]{entry.name}[/]"
+                    f"[bold]scanning[/bold]:::[bold #8BA2AD]{self.get_entry_type(path=Path(entry.path))}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
                 )
 
                 if not self.show_all and entry.name.startswith("."):
@@ -425,13 +491,13 @@ class EntryScanner:
 
         locale.setlocale(locale.LC_TIME, "")
 
-        entry_stat: stat_result = entry.stat(follow_symlinks=False)
+        entry_stat: os.stat_result = entry.stat(follow_symlinks=False)
         mtime: datetime = datetime.fromtimestamp(entry_stat.st_mtime)
         size: str = humanize.naturalsize(entry_stat.st_size, binary=True)
 
         mod_time = (
             f"{humanize.naturaltime(self.dt_now - mtime)}"
-            if self.dt_format == "concise"
+            if self.dt_format == "relative"
             else mtime.strftime("%c")
         )
         permissions: str = stat.filemode(entry_stat.st_mode)
@@ -445,23 +511,12 @@ class EntryScanner:
         except KeyError:
             group = str(entry_stat.st_gid)
 
-        if entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
-            entry_type = "dir"
-        elif entry.is_symlink():
-            if self.on_windows() and entry.is_dir(follow_symlinks=False):
-                entry_type = "junction"
-            else:
-                entry_type = "symlink"
-        else:
-            _, ext = os.path.splitext(entry.name)
-            entry_type = ext.lower() if ext else "file"
-
         return {
             "filename": entry.name,
             "path": entry.path,
             "size": size,
             "mod_time": mod_time,
-            "type": entry_type,
+            "type": self.get_entry_type(path=Path(entry.path)),
             "permissions": permissions,
             "owner": owner,
             "group": group,
@@ -480,7 +535,7 @@ class EntryScanner:
         filename = metadata["filename"]
         extension = os.path.splitext(filename)[1].lower()
 
-        # Handle special types first (dir, symlink, etc.)
+        # Handle special types first (directory, symlink, etc.)
         if entry_type in ENTRY_STYLES["special"]:
             style_info = ENTRY_STYLES["special"][entry_type]
             return Text(
@@ -503,222 +558,25 @@ class EntryScanner:
             style=style_info["style"],
         )
 
-
-class Oak:
-    def __init__(
-        self,
-        path: Path,
-        reverse: bool = False,
-        show_all: bool = False,
-        dirs_only: bool = False,
-        files_only: bool = False,
-        symlinks_only: bool = False,
-        junctions_only: bool = False,
-        show_group: bool = False,
-        dt_format: t.Literal["locale", "concise"] = "concise",
-    ):
+    @staticmethod
+    def get_entry_type(path: Path) -> str:
         """
-        Initialise the Oak filesystem visualiser.
+        Get the filetype of a given entry based on its attributes and extension.
 
-        :param path: Path to scan
-        :param reverse: Reverse the sort order
-        :param show_all: Show hidden files and directories
-        :param dirs_only: Show directories only
-        :param files_only: Show files only
-        :param symlinks_only: Show symlinks only
-        :param junctions_only: Show junctions only (Windows)
-        :param show_group: Show file groups and owners
-        :param dt_format: Specify the datetime format (locale or concise)
+        :param path: Path object representing the file or directory
+        :return: Filetype as a string ("directory", "symlink", "junction", "file", e.t.c)
         """
+        _filetype: str = "file"
+        if path.is_dir(follow_symlinks=False):
+            _filetype = "directory"
+        if path.is_symlink():
+            _filetype = "symlink"
+        if hasattr(path, "is_junction") and path.is_junction():
+            _filetype = "junction"
 
-        self.path = path
-        self.reverse = reverse
-        self.dt_now = datetime.now()
-        self.dt_format = dt_format
-        self.show_group = show_group
+        extension = path.suffix.lower()
+        for filetype, extensions in FILETYPE_MAP.items():
+            if extension in extensions:
+                _filetype = filetype
 
-        self.files_only = files_only
-        self.dirs_only = dirs_only
-        self.symlinks_only = symlinks_only
-        self.junctions_only = junctions_only
-        self.show_all = show_all
-
-        self.scanner = EntryScanner(
-            path,
-            reverse=self.reverse,
-            show_all=self.show_all,
-            dirs_only=self.dirs_only,
-            files_only=self.files_only,
-            symlinks_only=self.symlinks_only,
-            junctions_only=self.junctions_only,
-            dt_format=self.dt_format,
-            dt_now=self.dt_now,
-        )
-
-        self._table = Table(
-            show_header=True,
-            header_style="bold",
-            box=box.ROUNDED,
-            highlight=True,
-            expand=True,
-        )
-        self._table.add_column("path", no_wrap=True)
-        self._table.add_column("size", justify="right")
-        self._table.add_column("modified", style="bold")
-        self._table.add_column("type", style="#B7CAD4")
-        if self.show_group:
-            self._table.add_column("owner")
-            self._table.add_column("group")
-            self._table.add_column("permissions", style="dim")
-
-    def summary(self, directories: int, files: int, symlinks: int, junctions: int):
-        """
-        Print a summary of the scan results.
-
-        :param directories: Number of directories found
-        :param files: Number of files found
-        :param symlinks: Number of symlinks found
-        :param junctions: Number of junctions found
-        """
-
-        summary_msg: str = ""
-
-        if self.files_only:
-            summary_msg = f"{files} files"
-        if self.dirs_only:
-            summary_msg = f"{directories} directories"
-        if self.symlinks_only:
-            summary_msg = f"{symlinks} symlinks"
-        elif self.scanner.on_windows() and self.junctions_only:
-            summary_msg = f"{junctions} junctions"
-
-        elif not any(
-            [self.dirs_only, self.files_only, self.symlinks_only, self.junctions_only]
-        ):
-            if self.scanner.on_windows():
-                summary_msg = (
-                    f"{directories} directories, {files} files, "
-                    f"{symlinks} symlinks, and {junctions} junctions"
-                )
-            else:
-                summary_msg = (
-                    f"{directories} directories, {files} files, and {symlinks} symlinks"
-                )
-
-        logroller.info(
-            f"scanned {summary_msg} in {humanize.naturaldelta(datetime.now() - self.dt_now)}.",
-        )
-
-    def tree(self):
-        """
-        Display the directory structure as a tree.
-        """
-
-        root_name = os.path.basename(os.path.abspath(self.path)) or self.path
-        root_tree = Tree(
-            f"[bold blue] {root_name}[/bold blue]",
-            guide_style="dim",
-            highlight=True,
-        )
-
-        def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int, int]:
-            """
-            Recursively add nodes to the tree.
-
-            :param directory: string path of the directory to scan
-            :param tree: current Tree node to add entries to
-            :return: Tuple with counts of (files, directories, symlinks, junctions)
-            """
-
-            num_files = num_dirs = num_symlinks = num_junctions = 0
-
-            for entry, metadata in self.scanner.iter_entries(directory=directory):
-                f, d, s, j = self.scanner.classify_entry(entry=entry)
-                num_files += f
-                num_dirs += d
-                num_symlinks += s
-                num_junctions += j
-
-                filename: Text = self.scanner.style_entry_name(metadata=metadata)
-
-                if entry.is_dir(follow_symlinks=False):
-                    branch = tree.add(filename)
-                    sub_files, sub_dirs, sub_syms, sub_juncs = add_nodes(
-                        directory=entry.path, tree=branch
-                    )
-                    num_files += sub_files
-                    num_dirs += sub_dirs
-                    num_symlinks += sub_syms
-                    num_junctions += sub_juncs
-                else:
-                    tree.add(filename)
-
-            return num_files, num_dirs, num_symlinks, num_junctions
-
-        files, directories, symlinks, junctions = add_nodes(
-            directory=str(self.path), tree=root_tree
-        )
-
-        print(root_tree)
-
-        self.summary(
-            directories=directories,
-            files=files,
-            symlinks=symlinks,
-            junctions=junctions,
-        )
-
-    def table(self):
-        """
-        Display the directory contents in a table.
-        """
-        rows: t.List = []
-        num_files = num_dirs = num_symlinks = num_junctions = 0
-
-        for entry, metadata in self.scanner.iter_entries(directory=self.path):
-            files, dirs, symlinks, junctions = self.scanner.classify_entry(entry=entry)
-            num_files += files
-            num_dirs += dirs
-            num_symlinks += symlinks
-            num_junctions += junctions
-
-            rows.append(
-                [
-                    metadata["filename"],
-                    metadata,
-                    self.scanner.style_entry_name(metadata=metadata),
-                ]
-            )
-
-        rows.sort(key=lambda row: row[0].lower(), reverse=self.scanner.reverse)
-
-        for _, metadata, filename in rows:
-            if self.show_group:
-                self._table.add_row(
-                    filename,
-                    metadata["size"],
-                    metadata["mod_time"],
-                    metadata["type"].strip("."),
-                    metadata["owner"],
-                    metadata["group"],
-                    metadata["permissions"],
-                )
-            else:
-                self._table.add_row(
-                    filename,
-                    metadata["size"],
-                    metadata["mod_time"],
-                    metadata["type"].strip("."),
-                )
-
-        print(self._table)
-
-        self.summary(
-            directories=num_dirs,
-            files=num_files,
-            symlinks=num_symlinks,
-            junctions=num_junctions,
-        )
-
-
-logroller = LogRoller()
+        return _filetype
