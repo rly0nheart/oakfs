@@ -85,7 +85,7 @@ class Oak:
         self._table.add_column("path", no_wrap=True)
         self._table.add_column("size", justify="right", style="bold")
         self._table.add_column("modified", style="italic")
-        self._table.add_column("type", style="#8BA2AD")
+        self._table.add_column("type", style="#8BA2AD", no_wrap=True)
         if self.groups:
             self._table.add_column("owner", justify="right")
             self._table.add_column("group")

@@ -8,12 +8,13 @@ from datetime import datetime
 from pathlib import Path
 
 import humanize
+import magic
 from rich.status import Status
 from rich.text import Text
 
 ENTRY_STYLES: dict = {
     "special": {
-        "directory": {"style": "bold blue", "icon": ""},
+        "dir": {"style": "bold blue", "icon": ""},
         "symlink": {"style": "blue underline", "icon": ""},
         "file": {"style": "dim white", "icon": ""},
         "other": {"style": "dim", "icon": ""},
@@ -229,150 +230,6 @@ ENTRY_STYLES: dict = {
     ],
 }
 
-FILETYPE_MAP: dict[str, list[str]] = {
-    # Textual
-    "plaintext": [".txt", ".rst", ".rtf", ".pub"],
-    "config": [".xml", ".ini", ".cfg", ".toml", ".iml", ".yml", ".yaml"],
-    "log": [".log"],
-    # Data / structured
-    "database": [
-        ".plist",
-        ".db",
-        ".db3",
-        ".sqlite",
-        ".sqlite3",
-        ".sql",
-        ".mdb",
-        ".accdb",
-        ".parquet",
-        ".avro",
-        ".orc",
-        ".hdf5",
-        ".h5",
-        ".msgpack",
-        ".tsv",
-    ],
-    "json": [".json", ".jsonl", ".ndjson"],
-    "markdown": [".md"],
-    "ssh": [".pub", ".pem", ".key"],
-    "record": [".csv"],
-    # Documents
-    "document": [".docx", ".doc", ".odt", ".pdf", ".tex"],
-    "spreadsheet": [".xlsx", ".xls"],
-    "presentation": [".pptx", ".ppt"],
-    "ebook": [".epub"],
-    # Media
-    "image": [
-        ".jpg",
-        ".ico",
-        ".jpeg",
-        ".png",
-        ".gif",
-        ".bmp",
-        ".svg",
-        ".tiff",
-        ".webp",
-        ".heic",
-        ".psd",
-        ".xcf",
-        ".cr2",
-        ".nef",
-        ".arw",
-        ".orf",
-        ".rw2",
-    ],
-    "video": [
-        ".mp4",
-        ".mkv",
-        ".avi",
-        ".mov",
-        ".wmv",
-        ".webm",
-        ".flv",
-        ".mpeg",
-        ".mpg",
-        ".3gp",
-    ],
-    "audio": [
-        ".mp3",
-        ".wav",
-        ".flac",
-        ".aac",
-        ".ogg",
-        ".m4a",
-        ".wma",
-        ".alac",
-        ".aiff",
-        ".opus",
-        ".pcm",
-        ".dsd",
-        ".mid",
-        ".midi",
-        ".aifc",
-        ".caf",
-    ],
-    "archive": [
-        ".zip",
-        ".tar",
-        ".gz",
-        ".rar",
-        ".7z",
-        ".bz2",
-        ".xz",
-        ".tgz",
-        ".tbz2",
-        ".txz",
-        ".zst",
-        ".lzma",
-        ".cab",
-        ".arj",
-        ".lzh",
-        ".z",
-        ".jar",
-        ".cpio",
-    ],
-    "binary": [".bin", ".so", ".dylib", ".out"],
-    "executable": [".exe", ".bat", ".cmd", ".dll"],
-    "diskimage": [".iso", ".dmg"],
-    "package": [".ipa", ".app", ".pkg", ".apk", ".xapk"],
-    "checksum": [".md5", ".sha1", ".sha256", ".sha512", ".sfv"],
-    "signature": [".sig", ".asc", ".gpg", ".pgp"],
-    "header": [".h", ".hh", ".hpp", ".hxx"],
-    "code": [
-        ".py",
-        ".pyi",
-        ".pyc",
-        ".ps1",
-        ".js",
-        ".mjs",
-        ".cjs",
-        ".ts",
-        ".tsx",
-        ".jsx",
-        ".java",
-        ".c",
-        ".cc",
-        ".cpp",
-        ".cs",
-        ".go",
-        ".php",
-        ".rb",
-        ".rs",
-        ".kt",
-        ".swift",
-        ".pl",
-        ".sh",
-        ".zsh",
-        ".html",
-        ".css",
-        ".scss",
-    ],
-    # Misc
-    "socket": [".sock"],
-    "desktop": [".desktop"],
-    "lockfile": [".lock"],
-}
-
 
 class EntryScanner:
     def __init__(
@@ -566,17 +423,13 @@ class EntryScanner:
         :param path: Path object representing the file or directory
         :return: Filetype as a string ("directory", "symlink", "junction", "file", e.t.c)
         """
-        _filetype: str = "file"
         if path.is_dir(follow_symlinks=False):
-            _filetype = "directory"
+            return "dir"
         if path.is_symlink():
-            _filetype = "symlink"
+            return "symlink"
         if hasattr(path, "is_junction") and path.is_junction():
-            _filetype = "junction"
+            return "junction"
 
-        extension = path.suffix.lower()
-        for filetype, extensions in FILETYPE_MAP.items():
-            if extension in extensions:
-                _filetype = filetype
-
-        return _filetype
+        mime = magic.Magic(mime=True)
+        filetype = mime.from_file(str(path))
+        return filetype.replace("application/", "") or "dunno, lol"

@@ -34,3 +34,9 @@
 
 - `--verbose` option (temporarily dropped, may return later).
 - Shorthand `-T` for `--dt-format`.
+
+## 0.2.1
+
+### Changed
+
+- Using `python-magic` to determine file types instead of manual mapping.
