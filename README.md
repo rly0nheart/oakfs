@@ -11,16 +11,15 @@
 - 📊 **Table view**: Display directories in a sortable table with file size, type, permissions, and modified time.
 - 🎨 **Rich styling**: Icons and colors for file types (documents, images, audio, code, archives, etc.).
 - 🔍 **Filtering**:
-    - `--all`: include hidden files
-    - `--dirs`: show only directories
-    - `--files`: show only files
-    - `--symlinks`: show only symlinks
-    - `--junctions`: show only junctions (Windows)
+    - `-a, --all`: include hidden files
+    - `-d, --directories`: show only directories
+    - `-f, --files`: show only files
+    - `-s, --symlinks`: show only symlinks
+    - `-j, --junctions`: show only junctions (Windows)
 
-- 👥 **Ownership info**: Show owner, group, and permissions with `--group`.
-- 🕒 **Timestamps**: Choose between `concise` relative times (`3 minutes ago`) or `locale` formatted dates.
+- 👥 **Ownership info**: Show owner, group, and permissions with `--groups`.
+- 🕒 **Timestamps**: Choose between `relative` relative times (`3 minutes ago`) or `locale` formatted dates.
 - 🔄 **Sorting**: Reverse order with `--reverse`.
-- 🐢 **Verbose mode**: Show progress of scanning with `--verbose`.
 
 > [!Note]
 > To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
@@ -40,47 +39,45 @@ This will install `oak` as a CLI command.
 
 Run `oak` from the command line:
 
+### Table view (default)
+
+```bash
+oak [PATH]
+```
+
+Example:
+
+```bash
+oak ~/projects
+```
+
 ### Tree view
 
 ```bash
-oak tree [PATH]
+oak --tree [PATH]
 ```
 
 Example:
 
 ```bash
-oak tree ~/projects
+oak --tree ~/projects
 ```
-
-### Table view
-
-```bash
-oak table [PATH]
-```
-
-Example:
-
-```bash
-oak table ~/projects
-```
-
-### No subcommand? No problem!
-
-If you don’t specify a subcommand, `oak` will **prompt you** interactively to pick between `table` and `tree`.
 
 ## ⚙️ Options
 
-Global options (apply to both commands):
-
-| Option                              | Description                                  |
-|-------------------------------------|----------------------------------------------|
-| `-f, --files`                       | show files only                              |
-| `-d, --dirs`                        | show directories only                        |
-| `-s, --symlinks`                    | show symlinks only                           |
-| `-a, --all`                         | show hidden files and directories            |
-| `-g, --group`                       | show file owner, group, and permissions      |
-| `-T, --dt-format [concise\|locale]` | format modified date/time (default: concise) |
-| `-r, --reverse`                     | reverse sort order                           |
+| Option                               | Description                                        |
+|--------------------------------------|----------------------------------------------------|
+| `-t, --tree`                         | show filesystem hierarchy in a tree view structure |
+| `-f, --files`                        | show files only                                    |
+| `-d, --directories`                  | show directories only                              |
+| `-s, --symlinks`                     | show symlinks only                                 |
+| `-j, --junctions`                    | show junctions only <Windows>                      |
+| `-a, --all`                          | show hidden files and directories                  |
+| `-g, --groups`                       | show file owner, group, and permissions            |
+| `-T, --dt-format [relative\|locale]` | format modified date/time (default: relative)      |
+| `-r, --reverse`                      | reverse sort order                                 |
+| `-h, --help`                         | show help message and exit                         |
+| `--version`                          | show version and exit                              |
 
 <p align="center">
   <strong>ok. that's all (for now).</strong>
