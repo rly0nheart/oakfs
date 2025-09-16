@@ -14,7 +14,7 @@
   Removed `tree` / `table` subcommands. Instead:
     - `oak [PATH]` → shows a table view (default).
     - `oak -t [PATH]` → shows a tree view.
-    - Shorthand `-T` for `--dt-format`.
+
 - Option names updated for consistency:
     - `--dirs` → `--directories`
     - `--group` → `--groups`
@@ -32,4 +32,5 @@
 
 ### Removed
 
-- `--verbose` option (temporarily dropped, may return later). 
+- `--verbose` option (temporarily dropped, may return later).
+- Shorthand `-T` for `--dt-format`.
