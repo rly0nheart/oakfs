@@ -65,20 +65,20 @@ oak --tree ~/projects
 
 ## ⚙️ Options
 
-| Option                                                                        | Description                                        |
-|-------------------------------------------------------------------------------|----------------------------------------------------|
-| `-t, --tree`                                                                  | show filesystem hierarchy in a tree view structure |
-| `-f, --files`                                                                 | show files only                                    |
-| `-d, --directories`                                                           | show directories only                              |
-| `-s, --symlinks`                                                              | show symlinks only                                 |
-| `-j, --junctions`                                                             | show junctions only <Windows>                      |
-| `-a, --all`                                                                   | show hidden files and directories                  |
-| `-g, --groups`                                                                | show file owner, group, and permissions            |
-| `--dt-format [relative\|locale]`                                              | format modified date/time (default: relative)      |
-| `--table-style  [ASCII\|ROUNDED\|SQUARE \|HEAVY \|DOUBLE \|SIMPLE \|MINIMAL]` | table border style (default: ROUNDED)              |
-| `-r, --reverse`                                                               | reverse sort order                                 |
-| `-h, --help`                                                                  | show help message and exit                         |
-| `--version`                                                                   | show version and exit                              |
+| Option                                                                    | Description                                        |
+|---------------------------------------------------------------------------|----------------------------------------------------|
+| `-t, --tree`                                                              | show filesystem hierarchy in a tree view structure |
+| `-f, --files`                                                             | show files only                                    |
+| `-d, --directories`                                                       | show directories only                              |
+| `-s, --symlinks`                                                          | show symlinks only                                 |
+| `-j, --junctions`                                                         | show junctions only <Windows>                      |
+| `-a, --all`                                                               | show hidden files and directories                  |
+| `-g, --groups`                                                            | show file owner, group, and permissions            |
+| `--dt-format [relative\|locale]`                                          | format modified date/time (default: relative)      |
+| `--table-style  [ASCII\|ROUNDED\|SQUARE\|HEAVY\|DOUBLE\|SIMPLE\|MINIMAL]` | table border style (default: ROUNDED)              |
+| `-r, --reverse`                                                           | reverse sort order                                 |
+| `-h, --help`                                                              | show help message and exit                         |
+| `--version`                                                               | show version and exit                              |
 
 <p align="center">
   <strong>ok. that's all (for now).</strong>
