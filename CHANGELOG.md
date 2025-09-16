@@ -14,6 +14,7 @@
   Removed `tree` / `table` subcommands. Instead:
     - `oak [PATH]` → shows a table view (default).
     - `oak -t [PATH]` → shows a tree view.
+    - Shorthand `-T` for `--dt-format`.
 - Option names updated for consistency:
     - `--dirs` → `--directories`
     - `--group` → `--groups`
@@ -25,6 +26,9 @@
 - More informative error handling with friendly messages.
 - Show filetype in table view... seriously, actually showing filetypes. There's an exhaustive process behind this.
 - Show an informative message when a directory is empty.
+- `--table-style` option to customize table border styles (options: `ASCII`, `ROUNDED`, `SQUARE`, `HEAVY`, `DOUBLE`,
+  `SIMPLE`, `MINIMAL`; default: `ROUNDED`).
+- `--version` option to display the current version of oakfs.
 
 ### Removed
 
