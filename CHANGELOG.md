@@ -49,3 +49,9 @@ Noticeable Changes Starting from Version 0.1.3
 
 - `-T` shorthand for `--table-style`.
 - `-N, --no-icons` option to enable/disable icons in the output.
+
+# 0.3.1
+
+### Patched
+
+- Fix version string in __init__.py
