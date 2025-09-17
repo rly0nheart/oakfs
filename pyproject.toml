@@ -1,6 +1,6 @@
 [project]
 name = "oakfs"
-version = "0.3.0"
+version = "0.3.1"
 description = "a humane CLI-based filesystem exploration tool, for humans."
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
