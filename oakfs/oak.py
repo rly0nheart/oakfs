@@ -10,12 +10,13 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
-from ._logroller import LogRoller
-from ._scanner import EntryScanner
+from .logroller import LogRoller
+from .scanner import EntryScanner
 
+__all__ = ["Oak", "log", "CWD"]
+
+log = LogRoller()
 CWD = Path.cwd()
-
-__all__ = ["Oak", "CWD"]
 
 
 class Oak:
@@ -30,10 +31,7 @@ class Oak:
         files_only: bool,
         symlinks_only: bool,
         junctions_only: bool,
-        dt_format: t.Literal["locale", "relative"],
-        table_style: t.Literal[
-            "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
-        ] = "ROUNDED",
+        **kwargs: t.Any,
     ):
         """
         Initialise the Oak filesystem visualiser.
@@ -46,38 +44,39 @@ class Oak:
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
         :param groups: Show file groups and owners
-        :param dt_format: Specify the datetime format (locale or relative)
-        :param table_style: Table border style
+        :param verbose: Enable verbose output
+        :param kwargs: Additional keyword arguments for table style and datetime format
         """
+        self.dt_now = datetime.now()
 
         self.path = path
         self.reverse = reverse
-        self.dt_now = datetime.now()
-        self.dt_format = dt_format
         self.groups = groups
+        self.show_all = show_all
 
         self.files_only = files_only
         self.dirs_only = dirs_only
         self.symlinks_only = symlinks_only
         self.junctions_only = junctions_only
-        self.show_all = show_all
 
         self.scanner = EntryScanner(
             path,
             reverse=self.reverse,
             show_all=self.show_all,
+            no_icons=kwargs.get("no_icons", True),
             dirs_only=self.dirs_only,
             files_only=self.files_only,
             symlinks_only=self.symlinks_only,
             junctions_only=self.junctions_only,
-            dt_format=self.dt_format,
+            dt_format=kwargs.get("dt_format"),
             dt_now=self.dt_now,
+            verbose=kwargs.get("verbose", True),
         )
 
         self._table = Table(
             show_header=True,
             header_style="bold",
-            box=getattr(box, table_style),
+            box=getattr(box, kwargs.get("table_style", "ROUNDED").upper()),
             highlight=True,
             expand=True,
             border_style="#80B3FF",
@@ -85,7 +84,7 @@ class Oak:
         self._table.add_column("path", no_wrap=True)
         self._table.add_column("size", justify="right", style="bold")
         self._table.add_column("modified", style="italic")
-        self._table.add_column("type", style="#8BA2AD")
+        self._table.add_column("type", style="#8BA2AD", no_wrap=True)
         if self.groups:
             self._table.add_column("owner", justify="right")
             self._table.add_column("group")
@@ -101,31 +100,39 @@ class Oak:
         :param junctions: Number of junctions found
         """
 
-        summary_msg: str = ""
+        parts: list[str] = []
 
-        if self.files_only:
-            summary_msg = f"{files} files"
-        if self.dirs_only:
-            summary_msg = f"{directories} directories"
-        if self.symlinks_only:
-            summary_msg = f"{symlinks} symlinks"
-        elif self.scanner.on_windows() and self.junctions_only:
-            summary_msg = f"{junctions} junctions"
+        # Respect filters (files_only, dirs_only, etc.)
+        if self.files_only and files > 0:
+            parts.append(f"{files} file{'s' if files != 1 else ''}")
+        elif self.dirs_only and directories > 0:
+            parts.append(f"{directories} director{'y' if directories == 1 else 'ies'}")
+        elif self.symlinks_only and symlinks > 0:
+            parts.append(f"{symlinks} symlink{'s' if symlinks != 1 else ''}")
+        elif self.scanner.is_windows() and self.junctions_only and junctions > 0:
+            parts.append(f"{junctions} junction{'s' if junctions != 1 else ''}")
 
+        # Default case: show all non-zero counts
         elif not any(
             [self.dirs_only, self.files_only, self.symlinks_only, self.junctions_only]
         ):
-            if self.scanner.on_windows():
-                summary_msg = (
-                    f"{directories} directories, {files} files, "
-                    f"{symlinks} symlinks, and {junctions} junctions"
+            if directories > 0:
+                parts.append(
+                    f"{directories} director{'y' if directories == 1 else 'ies'}"
                 )
-            else:
-                summary_msg = (
-                    f"{directories} directories, {files} files, and {symlinks} symlinks"
-                )
+            if files > 0:
+                parts.append(f"{files} file{'s' if files != 1 else ''}")
+            if symlinks > 0:
+                parts.append(f"{symlinks} symlink{'s' if symlinks != 1 else ''}")
+            if self.scanner.is_windows() and junctions > 0:
+                parts.append(f"{junctions} junction{'s' if junctions != 1 else ''}")
 
-        LogRoller().info(
+        if len(parts) == 1:
+            summary_msg = parts[0]
+        else:
+            summary_msg = ", ".join(parts[:-1]) + f", and {parts[-1]}"
+
+        log.info(
             f"scanned {summary_msg} (in {humanize.naturaldelta(datetime.now() - self.dt_now)}).",
         )
 
@@ -136,7 +143,9 @@ class Oak:
 
         root_name = os.path.basename(os.path.abspath(self.path)) or self.path
         root_tree = Tree(
-            f"[bold blue] {root_name}[/bold blue]",
+            self.scanner.style_entry_name(
+                metadata={"filename": root_name, "type": "dir"}
+            ),
             guide_style="dim",
             highlight=True,
         )
@@ -152,7 +161,7 @@ class Oak:
 
             num_files = num_dirs = num_symlinks = num_junctions = 0
 
-            for entry, metadata in self.scanner.iter_entries(directory=directory):
+            for entry, metadata in self.scanner.entries(directory=directory):
                 f, d, s, j = self.scanner.classify_entry(entry=entry)
                 num_files += f
                 num_dirs += d
@@ -181,21 +190,23 @@ class Oak:
 
         print(root_tree)
 
-        self.summary(
-            directories=directories,
-            files=files,
-            symlinks=symlinks,
-            junctions=junctions,
-        )
+        if self.scanner.verbose:
+            self.summary(
+                directories=directories,
+                files=files,
+                symlinks=symlinks,
+                junctions=junctions,
+            )
 
     def table(self):
         """
         Display the directory contents in a table.
         """
-        rows: t.List = []
+
+        rows: list = []
         num_files = num_dirs = num_symlinks = num_junctions = 0
 
-        for entry, metadata in self.scanner.iter_entries(directory=self.path):
+        for entry, metadata in self.scanner.entries(directory=self.path):
             files, dirs, symlinks, junctions = self.scanner.classify_entry(entry=entry)
             num_files += files
             num_dirs += dirs
@@ -233,9 +244,10 @@ class Oak:
 
         print(self._table)
 
-        self.summary(
-            directories=num_dirs,
-            files=num_files,
-            symlinks=num_symlinks,
-            junctions=num_junctions,
-        )
+        if self.scanner.verbose:
+            self.summary(
+                directories=num_dirs,
+                files=num_files,
+                symlinks=num_symlinks,
+                junctions=num_junctions,
+            )
