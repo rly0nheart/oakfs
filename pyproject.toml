@@ -1,7 +1,7 @@
 [project]
 name = "oakfs"
-version = "0.2.1"
-description = "A cute filesystem visualisation tool, for cute humans 🙂"
+version = "0.3.0"
+description = "a humane CLI-based filesystem exploration tool, for humans."
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
 ]
@@ -18,7 +18,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English"
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "humanize (>=4.13.0,<5.0.0)",
     "python-magic (>=0.4.27,<1.0.0)",
@@ -26,8 +26,8 @@ dependencies = [
 ]
 
 [tool.poetry.scripts]
-oak = "oakfs._cli:start"
-oakfs = "oakfs._cli:super_easy_barely_an_inconvenience"
+oak = "oakfs.cli:start"
+oakfs = "oakfs.cli:super_easy_barely_an_inconvenience"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

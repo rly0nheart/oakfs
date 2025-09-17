@@ -6,10 +6,8 @@ from pathlib import Path
 import rich_click as click
 
 from . import __pkg__, __version__
-from ._logroller import LogRoller
-from ._oak import Oak, CWD
+from .oak import Oak, log, CWD
 
-logroller = LogRoller()
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["relative", "locale"]
 
@@ -33,6 +31,13 @@ DATETIME_FORMAT = ["relative", "locale"]
 )
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
 @click.option(
+    "-N",
+    "--no-icons",
+    is_flag=True,
+    help="enable/disable showing icons next to filenames",
+)
+@click.option(
+    "-D",
     "--dt-format",
     type=click.Choice(DATETIME_FORMAT),
     default="relative",
@@ -40,12 +45,14 @@ DATETIME_FORMAT = ["relative", "locale"]
     help="specify the datetime format.",
 )
 @click.option(
+    "-T",
     "--table-style",
     type=click.Choice(TABLE_STYLES),
     default="ROUNDED",
     show_default=True,
     help="table border style",
 )
+@click.option("-v", "--verbose", is_flag=True, help="enable verbose output")
 @click.version_option(__version__, prog_name=__pkg__)
 def cli(
     path: Path,
@@ -61,9 +68,11 @@ def cli(
     table_style: t.Literal[
         "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
     ],
+    verbose: bool,
+    no_icons: bool,
 ):
     """
-    oak: a cute filesystem visualisation tool... for cute humans 🙂
+    oak: A humane CLI-based filesystem exploration tool, for humans.
     """
 
     oak = Oak(
@@ -77,10 +86,12 @@ def cli(
         junctions_only=junctions,
         dt_format=dt_format,
         table_style=table_style,
+        verbose=verbose,
+        no_icons=no_icons,
     )
 
     if path.is_dir() and not any(path.iterdir()):
-        logroller.info(f"directory is empty: {path}")
+        log.info(f"directory is empty: {path}")
     else:
         if tree:
             oak.tree()
@@ -96,18 +107,18 @@ def start():
     try:
         cli(obj={})
     except FileNotFoundError as e:
-        logroller.error(
+        log.error(
             f"cannot access '{e.filename}': [bold]no such file or directory[/]",
         )
         sys.exit(2)
     except PermissionError as e:
-        logroller.error(
+        log.error(
             f"cannot open directory '{e.filename}': [bold]permission denied[/]",
         )
         sys.exit(1)
 
     except Exception as e:
-        logroller.error(f"unknown error: {e}")
+        log.error(f"unknown error: {e}")
         sys.exit(1)
 
 
@@ -136,5 +147,5 @@ def super_easy_barely_an_inconvenience():
         f"[bold]fs[/] stands for, [bold]fuck’s sake[/] just write [bold]'oak'[/] like a normal human being.",
     ]
 
-    logroller.warning(random.choice(oak_quotes_because_why_not))
+    log.warning(random.choice(oak_quotes_because_why_not))
     start()

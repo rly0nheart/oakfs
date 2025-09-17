@@ -95,6 +95,18 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "python-magic"
+version = "0.4.27"
+description = "File type identification using libmagic"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+groups = ["main"]
+files = [
+    {file = "python-magic-0.4.27.tar.gz", hash = "sha256:c1ba14b08e4a5f5c31a302b7721239695b2f0f058d125bd5ce1ee36b9d9d3c3b"},
+    {file = "python_magic-0.4.27-py2.py3-none-any.whl", hash = "sha256:c212960ad306f700aa0d01e5d7a325d20548ff97eb9920dcd29513174f0294d3"},
+]
+
+[[package]]
 name = "rich"
 version = "14.1.0"
 description = "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"
@@ -148,5 +160,5 @@ files = [
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.11"
-content-hash = "5c7a0d6d0894924f882924f821344b04f4da694a8912b9f3e64db7dd7fe7fdf6"
+python-versions = ">=3.12"
+content-hash = "c6e75e2453f962f3256183b6944040b46a0a7260b3c02dd3fa8a812fd5c1ec6d"

@@ -1,12 +1,12 @@
-# Noticeable Changes Starting from Version 0.1.3
+Noticeable Changes Starting from Version 0.1.3
 
-## 0.1.3
+# 0.1.3
 
 * Android icon for `.apk`, and `.xapk` files.
 * Apple icon for `.app`, `.ipa`, and `.pkg` files.
 * Added `.cjs` extensions for JavaScript files.
 
-## 0.2.0
+# 0.2.0
 
 ### Changed
 
@@ -35,8 +35,17 @@
 - `--verbose` option (temporarily dropped, may return later).
 - Shorthand `-T` for `--dt-format`.
 
-## 0.2.1
+# 0.3.0
 
 ### Changed
 
 - Using `python-magic` to determine file types instead of manual mapping.
+- Minimum Python version requirement increased to 3.12 from 3.11
+- Bring back the `-v, --verbose` option to show debug information.
+- Bring back the shorthand for `--dt-format` as `-D`.
+- Refactor icon mapping logic for the `-N, --no-icons` option.
+
+### Added
+
+- `-T` shorthand for `--table-style`.
+- `-N, --no-icons` option to enable/disable icons in the output.

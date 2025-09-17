@@ -4,6 +4,7 @@ import os
 import pwd
 import stat
 import typing as t
+from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 
@@ -232,16 +233,18 @@ ENTRY_STYLES: dict = {
 
 
 class EntryScanner:
+
     def __init__(
         self,
         path: Path,
-        *,
         reverse: bool,
         show_all: bool,
         dirs_only: bool,
         files_only: bool,
         symlinks_only: bool,
         junctions_only: bool,
+        verbose: bool,
+        no_icons: bool,
         dt_now: datetime,
         dt_format: t.Literal["locale", "relative"],
     ):
@@ -255,32 +258,38 @@ class EntryScanner:
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
+        :param verbose: Enable verbose output
+        :param no_icons: Enable/Disable nerdfont icons in output
         :param dt_now: Current datetime for relative time calculations
-        :param dt_format: Specify the datetime format (locale or relative)
+        :param dt_format: Specify the datetime format (relative or relative)
+
         """
 
         # disable junction filtering on non-Windows
-        if not self.on_windows():
+        if not self.is_windows():
             junctions_only = False
 
         self.path = path
         self.reverse = reverse
         self.show_all = show_all
+        self.no_icons = no_icons
         self.dirs_only = dirs_only
         self.files_only = files_only
         self.symlinks_only = symlinks_only
         self.junctions_only = junctions_only
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
+        self.verbose = verbose
+        self.show_icons = no_icons
 
     @staticmethod
-    def on_windows() -> bool:
+    def is_windows() -> bool:
         """
         Check if the operating system is Windows.
         """
         return os.name == "nt"
 
-    def iter_entries(
+    def entries(
         self, directory: t.Union[str, Path]
     ) -> t.Iterator[t.Tuple[os.DirEntry, t.Dict]]:
         """
@@ -290,14 +299,18 @@ class EntryScanner:
         :return: Iterator of tuples containing directory entry and its metadata
         """
 
-        entries: list[os.DirEntry] = list(os.scandir(directory))
+        entries: t.List[os.DirEntry] = list(os.scandir(directory))
         entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
+        status_context: t.Union[Status, nullcontext[None]] = (
+            Status("...") if self.verbose else nullcontext()
+        )
 
-        with Status("wait...") as status:
+        with status_context as status:
             for entry in entries:
-                status.update(
-                    f"[bold]scanning[/bold]:::[bold #8BA2AD]{self.get_entry_type(path=Path(entry.path))}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
-                )
+                if self.verbose:
+                    status.update(
+                        f"[bold]scanning[/bold]:::[bold #8BA2AD]{self.entry_type(path=Path(entry.path))}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
+                    )
 
                 if not self.show_all and entry.name.startswith("."):
                     continue
@@ -308,13 +321,13 @@ class EntryScanner:
                 if self.symlinks_only and not entry.is_symlink():
                     continue
                 if self.junctions_only and not (
-                    self.on_windows()
+                    self.is_windows()
                     and entry.is_symlink()
                     and entry.is_dir(follow_symlinks=False)
                 ):
                     continue
 
-                yield entry, self.get_entry_metadata(entry=entry)
+                yield entry, self.entry_metadata(entry=entry)
 
     def classify_entry(self, entry: os.DirEntry) -> t.Tuple[int, int, int, int]:
         """
@@ -331,14 +344,14 @@ class EntryScanner:
         elif entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
             dirs = 1
         elif entry.is_symlink():
-            if self.on_windows() and entry.is_dir(follow_symlinks=False):
+            if self.is_windows() and entry.is_dir(follow_symlinks=False):
                 junctions = 1
             else:
                 symlinks = 1
 
         return files, dirs, symlinks, junctions
 
-    def get_entry_metadata(self, entry: os.DirEntry) -> t.Dict:
+    def entry_metadata(self, entry: os.DirEntry) -> t.Dict:
         """
         Collect metadata from a directory entry.
 
@@ -373,14 +386,13 @@ class EntryScanner:
             "path": entry.path,
             "size": size,
             "mod_time": mod_time,
-            "type": self.get_entry_type(path=Path(entry.path)),
+            "type": self.entry_type(path=Path(entry.path)),
             "permissions": permissions,
             "owner": owner,
             "group": group,
         }
 
-    @staticmethod
-    def style_entry_name(metadata: dict) -> Text:
+    def style_entry_name(self, metadata: dict) -> Text:
         """
         Style the entry name based on its type and extension.
 
@@ -388,43 +400,41 @@ class EntryScanner:
         :return: Styled Text object
         """
 
-        entry_type = metadata["type"]
-        filename = metadata["filename"]
-        extension = os.path.splitext(filename)[1].lower()
+        filename: str = metadata["filename"]
+        entry_type: str = metadata["type"]
+        extension: str = os.path.splitext(filename)[1].lower()
 
-        # Handle special types first (directory, symlink, etc.)
+        # Special types (dir, symlink, etc.)
         if entry_type in ENTRY_STYLES["special"]:
             style_info = ENTRY_STYLES["special"][entry_type]
+            icon: str = "" if self.no_icons else style_info["icon"]
             return Text(
-                f"{style_info['icon']} {filename}",
-                style=style_info["style"],
+                f"{icon} {filename}" if icon else filename, style=style_info["style"]
             )
 
-        # Extension-based lookup from groups
+        # Extension-based groups
         for group in ENTRY_STYLES["groups"]:
             if extension in group["extensions"]:
+                icon: str = "" if self.no_icons else group["icon"]
                 return Text(
-                    f"{group['icon']} {filename}",
-                    style=group["style"],
+                    f"{icon} {filename}" if icon else filename, style=group["style"]
                 )
 
-        # Fallback to generic file
-        style_info = ENTRY_STYLES["special"]["file"]
+        style_info: dict = ENTRY_STYLES["special"]["file"]
+        icon: str = "" if self.no_icons else style_info["icon"]
         return Text(
-            f"{style_info['icon']} {filename}",
-            style=style_info["style"],
+            f"{icon} {filename}" if icon else filename, style=style_info["style"]
         )
 
-    @staticmethod
-    def get_entry_type(path: Path) -> str:
+    def entry_type(self, path: Path) -> str:
         """
         Get the filetype of a given entry based on its attributes and extension.
 
         :param path: Path object representing the file or directory
-        :return: Filetype as a string ("directory", "symlink", "junction", "file", e.t.c)
+        :return: Filetype as a string ("dir", "symlink", "junction", "file", e.t.c)
         """
         if path.is_dir(follow_symlinks=False):
-            return "dir"
+            return "folder" if self.is_windows() == "nt" else "dir"
         if path.is_symlink():
             return "symlink"
         if hasattr(path, "is_junction") and path.is_junction():
@@ -432,4 +442,4 @@ class EntryScanner:
 
         mime = magic.Magic(mime=True)
         filetype = mime.from_file(str(path))
-        return filetype.replace("application/", "") or "dunno, lol"
+        return filetype or "dunno, lol"
