@@ -34,7 +34,7 @@ DATETIME_FORMAT = ["relative", "locale"]
     "-N",
     "--no-icons",
     is_flag=True,
-    help="enable/disable showing icons next to filenames",
+    help="disable showing icons in output",
 )
 @click.option(
     "-D",

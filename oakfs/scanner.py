@@ -259,7 +259,7 @@ class EntryScanner:
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
         :param verbose: Enable verbose output
-        :param no_icons: Enable/Disable nerdfont icons in output
+        :param no_icons: Disable showing nerdfont icons in output
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (relative or relative)
 
