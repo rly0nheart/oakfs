@@ -29,6 +29,9 @@ DATETIME_FORMAT = ["relative", "locale"]
 @click.option(
     "-g", "--groups", is_flag=True, help="show file groups and owners <Table>"
 )
+@click.option("-o", "--owners", is_flag=True, help="show file owners <Table>")
+@click.option("-p", "--permissions", is_flag=True, help="show file permissions <Table>")
+@click.option("-m", "--mimetypes", is_flag=True, help="show mimetypes <Table>")
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
 @click.option(
     "-N",
@@ -61,9 +64,12 @@ def cli(
     files: bool,
     symlinks: bool,
     junctions: bool,
+    mimetypes: bool,
     _all: bool,
     reverse: bool,
     groups: bool,
+    owners: bool,
+    permissions: bool,
     dt_format: t.Literal["relative", "locale"],
     table_style: t.Literal[
         "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
@@ -79,6 +85,9 @@ def cli(
         path=path,
         reverse=reverse,
         groups=groups,
+        owners=owners,
+        permissions=permissions,
+        mimetypes=mimetypes,
         show_all=_all,
         dirs_only=directories,
         files_only=files,

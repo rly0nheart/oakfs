@@ -55,3 +55,22 @@ Noticeable Changes Starting from Version 0.1.3
 ### Patched
 
 - Fix version string in __init__.py
+
+# 0.4.0
+
+### Changed
+
+- Refactored the codebase to improve maintainability and readability.
+- Showing nerdfont icons in the table headers
+
+### Added
+
+- `-m, --mimetypes` option to show entry mimetypes in the table.
+- '-g, --groups' option to show entry groups in the table.
+- `-o, --owners` option to show entry owners in the table.
+- `-p, --permissions` option to show entry permissions in the table.
+
+### Removed
+
+- `python-magic` dependency. Now using `puremagic` for better cross-platform compatibility. (I recently found out that
+  `python-magic` can be a pain to install or use on Windows systems).

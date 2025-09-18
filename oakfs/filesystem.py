@@ -1,22 +1,23 @@
 import grp
-import locale
 import os
 import pwd
 import stat
 import typing as t
+from collections import Counter
 from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 
 import humanize
-import magic
+import puremagic
 from rich.status import Status
 from rich.text import Text
 
 ENTRY_STYLES: dict = {
     "special": {
-        "dir": {"style": "bold blue", "icon": ""},
-        "symlink": {"style": "blue underline", "icon": ""},
+        "inode/directory": {"style": "bold blue", "icon": ""},
+        "inode/symlink": {"style": "blue", "icon": ""},
+        "junction": {"style": "", "icon": ""},
         "file": {"style": "dim white", "icon": ""},
         "other": {"style": "dim", "icon": ""},
     },
@@ -232,8 +233,146 @@ ENTRY_STYLES: dict = {
 }
 
 
-class EntryScanner:
+IS_WINDOWS: bool = os.name == "nt"
 
+
+def style_text(filename: str, mimetype: str, extension: str, no_icons: bool) -> Text:
+    """
+    Return a styled Rich Text object for a filename.
+
+    :param filename: The entry's filename
+    :param mimetype: The entry's mimetype or special type (e.g. "inode/directory")
+    :param extension: File extension (lowercase, including dot)
+    :param no_icons: Whether to hide icons
+    """
+    # Special types
+    if mimetype in ENTRY_STYLES["special"]:
+        style_info = ENTRY_STYLES["special"][mimetype]
+        icon = "" if no_icons else style_info["icon"]
+        return Text(
+            f"{icon} {filename}" if icon else filename, style=style_info["style"]
+        )
+
+    # Extension-based groups
+    for group in ENTRY_STYLES["groups"]:
+        if extension in group["extensions"]:
+            icon = "" if no_icons else group["icon"]
+            return Text(
+                f"{icon} {filename}" if icon else filename, style=group["style"]
+            )
+
+    # Fallback
+    style_info = ENTRY_STYLES["special"]["file"]
+    icon = "" if no_icons else style_info["icon"]
+    return Text(f"{icon} {filename}" if icon else filename, style=style_info["style"])
+
+
+class Entry:
+    def __init__(self, path: Path, dt_now: datetime, dt_format: str, no_icons: bool):
+        """
+        Initialise the EntryStats object. Collects metadata for a given filesystem entry.
+
+        :param path: Path object representing the file or directory
+        :param dt_now: Current datetime for relative time calculations
+        :param dt_format: Specify the datetime format (relative or locale)
+        :param no_icons: Disable showing nerdfont icons in output
+        """
+        self.path = path
+        self.dt_now = dt_now
+        self.dt_format = dt_format
+        self.no_icons = no_icons
+
+        self._stat: os.stat_result = path.stat(follow_symlinks=False)
+        self._load_metadata()
+
+    def _load_metadata(self):
+        """
+        Load and process metadata for the entry.
+        """
+        self.filename: str = self.path.name
+        self.size: str = humanize.naturalsize(value=self._stat.st_size, binary=True)
+        self.permissions: str = stat.filemode(self._stat.st_mode)
+
+        mtime: datetime = datetime.fromtimestamp(self._stat.st_mtime)
+        self.last_modified: str = (
+            humanize.naturaltime(self.dt_now - mtime)
+            if self.dt_format == "relative"
+            else mtime.strftime("%c")
+        )
+
+        atime: datetime = datetime.fromtimestamp(self._stat.st_atime)
+        self.last_accessed: str = (
+            humanize.naturaltime(self.dt_now - atime)
+            if self.dt_format == "relative"
+            else atime.strftime("%c")
+        )
+
+        # Owner (Unix only, else fallback)
+        if pwd:
+            try:
+                self.owner: str = pwd.getpwuid(self._stat.st_uid).pw_name
+            except KeyError:
+                self.owner = str(self._stat.st_uid)
+        else:
+            self.owner = str(self._stat.st_uid)
+
+        # Group (Unix only, else fallback)
+        if grp:
+            try:
+                self.group: str = grp.getgrgid(self._stat.st_gid).gr_name
+            except KeyError:
+                self.group = str(self._stat.st_gid)
+        else:
+            self.group = str(self._stat.st_gid)
+
+        # File type (via puremagic or fallback)
+        self.mimetype, self.filetype = self._detect_type()
+
+    def _detect_type(self) -> tuple[str, str]:
+        """
+        Detect the file type using puremagic.
+        """
+        if self.path.is_dir(follow_symlinks=False):
+            if not any(self.path.iterdir()):
+                return "inode/directory", "Empty Directory"
+
+            return (
+                "inode/directory",
+                "Directory" if not IS_WINDOWS else "Folder",
+            )
+
+        if self.path.is_symlink():
+            return "inode/symlink", "Symbolic Link"
+
+        if hasattr(self.path, "is_junction") and self.path.is_junction():
+            return "inode/junction", "Junction"
+
+        if self.path.is_file(follow_symlinks=False) and self.path.stat().st_size > 0:
+            matches = puremagic.magic_file(filename=str(self.path))
+            if matches:
+                best_match = matches[0]
+                return best_match.mime_type, best_match.name
+
+        if self.path.is_file(follow_symlinks=False):
+            if self._stat.st_size == 0:
+                return "application/x-empty", "Empty File"
+
+        return "application/octet-stream", "Unknown File"
+
+    def style_name(self) -> Text:
+        """
+        Style this entry’s name based on its type and extension.
+        """
+
+        return style_text(
+            filename=self.filename,
+            mimetype=self.mimetype,
+            extension=os.path.splitext(self.filename)[1].lower(),
+            no_icons=self.no_icons,
+        )
+
+
+class EntryScanner:
     def __init__(
         self,
         path: Path,
@@ -261,18 +400,16 @@ class EntryScanner:
         :param verbose: Enable verbose output
         :param no_icons: Disable showing nerdfont icons in output
         :param dt_now: Current datetime for relative time calculations
-        :param dt_format: Specify the datetime format (relative or relative)
-
+        :param dt_format: Specify the datetime format (relative or locale)
         """
 
         # disable junction filtering on non-Windows
-        if not self.is_windows():
+        if not IS_WINDOWS:
             junctions_only = False
 
         self.path = path
         self.reverse = reverse
         self.show_all = show_all
-        self.no_icons = no_icons
         self.dirs_only = dirs_only
         self.files_only = files_only
         self.symlinks_only = symlinks_only
@@ -280,38 +417,24 @@ class EntryScanner:
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
         self.verbose = verbose
-        self.show_icons = no_icons
+        self.no_icons = no_icons
 
-    @staticmethod
-    def is_windows() -> bool:
+    def entries(self, directory: t.Union[str, Path]) -> t.Iterator[Entry]:
         """
-        Check if the operating system is Windows.
-        """
-        return os.name == "nt"
-
-    def entries(
-        self, directory: t.Union[str, Path]
-    ) -> t.Iterator[t.Tuple[os.DirEntry, t.Dict]]:
-        """
-        Iterate over directory entries, yielding each entry and its metadata.
+        Iterate over directory entries, yielding Entry objects.
 
         :param directory: Directory path to scan
-        :return: Iterator of tuples containing directory entry and its metadata
+        :return: Iterator of Entry objects
         """
-
         entries: t.List[os.DirEntry] = list(os.scandir(directory))
         entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
+
         status_context: t.Union[Status, nullcontext[None]] = (
             Status("...") if self.verbose else nullcontext()
         )
 
         with status_context as status:
             for entry in entries:
-                if self.verbose:
-                    status.update(
-                        f"[bold]scanning[/bold]:::[bold #8BA2AD]{self.entry_type(path=Path(entry.path))}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
-                    )
-
                 if not self.show_all and entry.name.startswith("."):
                     continue
                 if self.dirs_only and not entry.is_dir(follow_symlinks=False):
@@ -321,125 +444,70 @@ class EntryScanner:
                 if self.symlinks_only and not entry.is_symlink():
                     continue
                 if self.junctions_only and not (
-                    self.is_windows()
+                    IS_WINDOWS
                     and entry.is_symlink()
                     and entry.is_dir(follow_symlinks=False)
                 ):
                     continue
 
-                yield entry, self.entry_metadata(entry=entry)
+                if self.verbose:
+                    estats = Entry(
+                        path=Path(entry.path),
+                        dt_now=self.dt_now,
+                        dt_format=self.dt_format,
+                        no_icons=self.no_icons,
+                    )
+                    status.update(
+                        f"[bold]scanning[/bold]:::[bold #8BA2AD]{estats.filetype}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
+                    )
+                    yield estats
+                else:
+                    yield Entry(
+                        path=Path(entry.path),
+                        dt_now=self.dt_now,
+                        dt_format=self.dt_format,
+                        no_icons=self.no_icons,
+                    )
 
-    def classify_entry(self, entry: os.DirEntry) -> t.Tuple[int, int, int, int]:
+    def summary(self, entries: t.Iterable[Entry]) -> str:
         """
-        Classify the entry as file, directory, or symlink.
+        Generate a human-readable summary of the scanned entries.
 
-        :param entry: Directory entry to classify
-        :return: Tuple with counts of (files, directories, symlinks, junctions)
+        :param entries: Iterable of Entry objects
+        :return: Human-readable summary string
         """
-
-        files = dirs = symlinks = junctions = 0
-
-        if entry.is_file(follow_symlinks=False):
-            files = 1
-        elif entry.is_dir(follow_symlinks=False) and not entry.is_symlink():
-            dirs = 1
-        elif entry.is_symlink():
-            if self.is_windows() and entry.is_dir(follow_symlinks=False):
-                junctions = 1
+        counts: Counter[str] = Counter()
+        for entry in entries:
+            if entry.path.is_dir(follow_symlinks=False):
+                counts["directories"] += 1
+            elif entry.path.is_symlink():
+                if IS_WINDOWS and entry.path.is_dir(follow_symlinks=False):
+                    counts["junctions"] += 1
+                else:
+                    counts["symlinks"] += 1
             else:
-                symlinks = 1
+                counts["files"] += 1
 
-        return files, dirs, symlinks, junctions
-
-    def entry_metadata(self, entry: os.DirEntry) -> t.Dict:
-        """
-        Collect metadata from a directory entry.
-
-        :param entry: Directory entry
-        :return: Metadata dictionary
-        """
-
-        locale.setlocale(locale.LC_TIME, "")
-
-        entry_stat: os.stat_result = entry.stat(follow_symlinks=False)
-        mtime: datetime = datetime.fromtimestamp(entry_stat.st_mtime)
-        size: str = humanize.naturalsize(entry_stat.st_size, binary=True)
-
-        mod_time = (
-            f"{humanize.naturaltime(self.dt_now - mtime)}"
-            if self.dt_format == "relative"
-            else mtime.strftime("%c")
-        )
-        permissions: str = stat.filemode(entry_stat.st_mode)
-        try:
-            owner = pwd.getpwuid(entry_stat.st_uid).pw_name
-        except KeyError:
-            owner = str(entry_stat.st_uid)
-
-        try:
-            group = grp.getgrgid(entry_stat.st_gid).gr_name
-        except KeyError:
-            group = str(entry_stat.st_gid)
-
-        return {
-            "filename": entry.name,
-            "path": entry.path,
-            "size": size,
-            "mod_time": mod_time,
-            "type": self.entry_type(path=Path(entry.path)),
-            "permissions": permissions,
-            "owner": owner,
-            "group": group,
-        }
-
-    def style_entry_name(self, metadata: dict) -> Text:
-        """
-        Style the entry name based on its type and extension.
-
-        :param metadata: Metadata dictionary of the entry
-        :return: Styled Text object
-        """
-
-        filename: str = metadata["filename"]
-        entry_type: str = metadata["type"]
-        extension: str = os.path.splitext(filename)[1].lower()
-
-        # Special types (dir, symlink, etc.)
-        if entry_type in ENTRY_STYLES["special"]:
-            style_info = ENTRY_STYLES["special"][entry_type]
-            icon: str = "" if self.no_icons else style_info["icon"]
-            return Text(
-                f"{icon} {filename}" if icon else filename, style=style_info["style"]
+        parts: list[str] = []
+        if counts["directories"]:
+            parts.append(
+                f"{counts['directories']} director{'y' if counts['directories'] == 1 else 'ies'}"
+            )
+        if counts["files"]:
+            parts.append(f"{counts['files']} file{'s' if counts['files'] != 1 else ''}")
+        if counts["symlinks"]:
+            parts.append(
+                f"{counts['symlinks']} symlink{'s' if counts['symlinks'] != 1 else ''}"
+            )
+        if counts["junctions"]:
+            parts.append(
+                f"{counts['junctions']} junction{'s' if counts['junctions'] != 1 else ''}"
             )
 
-        # Extension-based groups
-        for group in ENTRY_STYLES["groups"]:
-            if extension in group["extensions"]:
-                icon: str = "" if self.no_icons else group["icon"]
-                return Text(
-                    f"{icon} {filename}" if icon else filename, style=group["style"]
-                )
+        if len(parts) == 1:
+            summary_msg: str = parts[0]
+        else:
+            summary_msg: str = ", ".join(parts[:-1]) + f", and {parts[-1]}"
 
-        style_info: dict = ENTRY_STYLES["special"]["file"]
-        icon: str = "" if self.no_icons else style_info["icon"]
-        return Text(
-            f"{icon} {filename}" if icon else filename, style=style_info["style"]
-        )
-
-    def entry_type(self, path: Path) -> str:
-        """
-        Get the filetype of a given entry based on its attributes and extension.
-
-        :param path: Path object representing the file or directory
-        :return: Filetype as a string ("dir", "symlink", "junction", "file", e.t.c)
-        """
-        if path.is_dir(follow_symlinks=False):
-            return "folder" if self.is_windows() == "nt" else "dir"
-        if path.is_symlink():
-            return "symlink"
-        if hasattr(path, "is_junction") and path.is_junction():
-            return "junction"
-
-        mime = magic.Magic(mime=True)
-        filetype = mime.from_file(str(path))
-        return filetype or "dunno, lol"
+        elapsed: str = humanize.naturaldelta(datetime.now() - self.dt_now)
+        return f"scanned {summary_msg} (in {elapsed})"
