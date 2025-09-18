@@ -69,7 +69,7 @@ oak --tree ~/projects
 > [!Tip]
 > If you decide not to install Nerd Fonts (because you've decided to become a caveperson for some reason), you can
 > always run `oak` with the `-N, --no-icons` option.
->> This should help you embrace the **unga bunga** in you.
+>> This should help with embracing the **unga bunga** within you.
 
 ## ⚙️ Options
 
@@ -96,9 +96,8 @@ oak --tree ~/projects
 | `--version`                                                                   | show version and exit                              |
 
 > [!Note]
-> The following options are available only in the default (table) view:
->> `-o, --owners`, `-p, --permissions`,
-`-g, --groups`, `-m, --mimetypes`, `-D, --dt-format`, and obviously `-T, --table-style`
+> The following options are available only in the default (table) view: `--owners`, `--permissions`,
+`--groups`, `--mimetypes`, `--dt-format`, and obviously `--table-style`
 
 
 <p align="center">
