@@ -3,15 +3,13 @@ import typing as t
 from datetime import datetime
 from pathlib import Path
 
-import humanize
-from rich import box
-from rich import print
+from rich import box, print
 from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
+from .filesystem import EntryScanner, Entry, ENTRY_STYLES, style_text
 from .logroller import LogRoller
-from .scanner import EntryScanner
 
 __all__ = ["Oak", "log", "CWD"]
 
@@ -20,12 +18,10 @@ CWD = Path.cwd()
 
 
 class Oak:
-
     def __init__(
         self,
         path: Path,
         reverse: bool,
-        groups: bool,
         show_all: bool,
         dirs_only: bool,
         files_only: bool,
@@ -39,25 +35,31 @@ class Oak:
         :param path: Path to scan
         :param reverse: Reverse the sort order
         :param show_all: Show hidden files and directories
+        :param show_mimetypes: Show mimetypes in the table
         :param dirs_only: Show directories only
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
-        :param groups: Show file groups and owners
-        :param verbose: Enable verbose output
-        :param kwargs: Additional keyword arguments for table style and datetime format
+        :param kwargs: Additional keyword arguments for configuration options such as table style,
+        datetime format, verbosity, and display of groups, owners, and permissions.
         """
-        self.dt_now = datetime.now()
 
         self.path = path
         self.reverse = reverse
-        self.groups = groups
         self.show_all = show_all
-
         self.files_only = files_only
         self.dirs_only = dirs_only
         self.symlinks_only = symlinks_only
         self.junctions_only = junctions_only
+
+        self.table_style = kwargs.get("table_style", "ROUNDED")
+
+        self.mimetypes = kwargs.get("mimetypes", False)
+        self.groups: bool = kwargs.get("groups", False)
+        self.owners: bool = kwargs.get("owners", False)
+        self.permissions: bool = kwargs.get("permissions", False)
+
+        self.verbose = kwargs.get("verbose", False)
 
         self.scanner = EntryScanner(
             path,
@@ -69,71 +71,8 @@ class Oak:
             symlinks_only=self.symlinks_only,
             junctions_only=self.junctions_only,
             dt_format=kwargs.get("dt_format"),
-            dt_now=self.dt_now,
-            verbose=kwargs.get("verbose", True),
-        )
-
-        self._table = Table(
-            show_header=True,
-            header_style="bold",
-            box=getattr(box, kwargs.get("table_style", "ROUNDED").upper()),
-            highlight=True,
-            expand=True,
-            border_style="#80B3FF",
-        )
-        self._table.add_column("path", no_wrap=True)
-        self._table.add_column("size", justify="right", style="bold")
-        self._table.add_column("modified", style="italic")
-        self._table.add_column("type", style="#8BA2AD", no_wrap=True)
-        if self.groups:
-            self._table.add_column("owner", justify="right")
-            self._table.add_column("group")
-            self._table.add_column("permissions", style="bold red")
-
-    def summary(self, directories: int, files: int, symlinks: int, junctions: int):
-        """
-        Print a summary of the scan results.
-
-        :param directories: Number of directories found
-        :param files: Number of files found
-        :param symlinks: Number of symlinks found
-        :param junctions: Number of junctions found
-        """
-
-        parts: list[str] = []
-
-        # Respect filters (files_only, dirs_only, etc.)
-        if self.files_only and files > 0:
-            parts.append(f"{files} file{'s' if files != 1 else ''}")
-        elif self.dirs_only and directories > 0:
-            parts.append(f"{directories} director{'y' if directories == 1 else 'ies'}")
-        elif self.symlinks_only and symlinks > 0:
-            parts.append(f"{symlinks} symlink{'s' if symlinks != 1 else ''}")
-        elif self.scanner.is_windows() and self.junctions_only and junctions > 0:
-            parts.append(f"{junctions} junction{'s' if junctions != 1 else ''}")
-
-        # Default case: show all non-zero counts
-        elif not any(
-            [self.dirs_only, self.files_only, self.symlinks_only, self.junctions_only]
-        ):
-            if directories > 0:
-                parts.append(
-                    f"{directories} director{'y' if directories == 1 else 'ies'}"
-                )
-            if files > 0:
-                parts.append(f"{files} file{'s' if files != 1 else ''}")
-            if symlinks > 0:
-                parts.append(f"{symlinks} symlink{'s' if symlinks != 1 else ''}")
-            if self.scanner.is_windows() and junctions > 0:
-                parts.append(f"{junctions} junction{'s' if junctions != 1 else ''}")
-
-        if len(parts) == 1:
-            summary_msg = parts[0]
-        else:
-            summary_msg = ", ".join(parts[:-1]) + f", and {parts[-1]}"
-
-        log.info(
-            f"scanned {summary_msg} (in {humanize.naturaldelta(datetime.now() - self.dt_now)}).",
+            dt_now=datetime.now(),
+            verbose=self.verbose,
         )
 
     def tree(self):
@@ -141,113 +80,117 @@ class Oak:
         Display the directory structure as a tree.
         """
 
+        root_styles: dict = ENTRY_STYLES["special"]["inode/directory"]
         root_name = os.path.basename(os.path.abspath(self.path)) or self.path
+
         root_tree = Tree(
-            self.scanner.style_entry_name(
-                metadata={"filename": root_name, "type": "dir"}
+            Text(
+                str(
+                    style_text(
+                        filename=root_name,
+                        mimetype="inode/directory",
+                        no_icons=self.scanner.no_icons,
+                        extension="",
+                    )
+                ),
+                style=root_styles["style"],
             ),
             guide_style="dim",
             highlight=True,
         )
 
-        def add_nodes(directory: str, tree: Tree) -> tuple[int, int, int, int]:
+        collected: list[Entry] = []
+
+        def add_nodes(directory: str, tree: Tree):
             """
             Recursively add nodes to the tree.
 
             :param directory: string path of the directory to scan
             :param tree: current Tree node to add entries to
-            :return: Tuple with counts of (files, directories, symlinks, junctions)
             """
+            for entry in self.scanner.entries(directory=directory):
+                collected.append(entry)
+                filename: Text = entry.style_name()
 
-            num_files = num_dirs = num_symlinks = num_junctions = 0
-
-            for entry, metadata in self.scanner.entries(directory=directory):
-                f, d, s, j = self.scanner.classify_entry(entry=entry)
-                num_files += f
-                num_dirs += d
-                num_symlinks += s
-                num_junctions += j
-
-                filename: Text = self.scanner.style_entry_name(metadata=metadata)
-
-                if entry.is_dir(follow_symlinks=False):
+                if entry.path.is_dir(follow_symlinks=False):
                     branch = tree.add(filename)
-                    sub_files, sub_dirs, sub_syms, sub_juncs = add_nodes(
-                        directory=entry.path, tree=branch
-                    )
-                    num_files += sub_files
-                    num_dirs += sub_dirs
-                    num_symlinks += sub_syms
-                    num_junctions += sub_juncs
+                    add_nodes(directory=str(entry.path), tree=branch)
                 else:
                     tree.add(filename)
 
-            return num_files, num_dirs, num_symlinks, num_junctions
-
-        files, directories, symlinks, junctions = add_nodes(
-            directory=str(self.path), tree=root_tree
-        )
-
+        add_nodes(directory=str(self.path), tree=root_tree)
         print(root_tree)
 
-        if self.scanner.verbose:
-            self.summary(
-                directories=directories,
-                files=files,
-                symlinks=symlinks,
-                junctions=junctions,
-            )
+        if self.verbose:
+            log.info(self.scanner.summary(entries=collected))
 
     def table(self):
         """
         Display the directory contents in a table.
         """
 
-        rows: list = []
-        num_files = num_dirs = num_symlinks = num_junctions = 0
+        icon_prefix = lambda icon: "" if self.scanner.no_icons else f"{icon} "
 
-        for entry, metadata in self.scanner.entries(directory=self.path):
-            files, dirs, symlinks, junctions = self.scanner.classify_entry(entry=entry)
-            num_files += files
-            num_dirs += dirs
-            num_symlinks += symlinks
-            num_junctions += junctions
+        def make_table() -> Table:
+            """
+            Make rich table
 
-            rows.append(
-                [
-                    metadata["filename"],
-                    metadata,
-                    self.scanner.style_entry_name(metadata=metadata),
-                ]
+            :return: A filled table
+            """
+
+            table = Table(
+                show_header=True,
+                header_style="bold",
+                box=getattr(box, self.table_style.upper()),
+                highlight=True,
+                expand=True,
+                border_style="#80B3FF",
             )
-
-        rows.sort(key=lambda row: row[0].lower(), reverse=self.scanner.reverse)
-
-        for _, metadata, filename in rows:
+            table.add_column(f"{icon_prefix('󰝰')}Path", no_wrap=True)
+            table.add_column(f"{icon_prefix('')}Size", justify="right", style="bold")
+            table.add_column(f"{icon_prefix('')}Type", style="dim", overflow="fold")
+            table.add_column(
+                f"{icon_prefix('󰃰')}Accessed", style="italic", justify="right"
+            )
+            table.add_column(f"{icon_prefix('')}Modified", style="italic")
+            if self.mimetypes:
+                table.add_column(
+                    f"{icon_prefix('')}Mimetype", style="#8BA2AD", no_wrap=True
+                )
             if self.groups:
-                self._table.add_row(
-                    filename,
-                    metadata["size"],
-                    metadata["mod_time"],
-                    metadata["type"].strip("."),
-                    metadata["owner"],
-                    metadata["group"],
-                    metadata["permissions"],
-                )
-            else:
-                self._table.add_row(
-                    filename,
-                    metadata["size"],
-                    metadata["mod_time"],
-                    metadata["type"].strip("."),
-                )
+                table.add_column(f"{icon_prefix('')}Group")
+            if self.owners:
+                table.add_column(f"{icon_prefix('')}Owner")
+            if self.permissions:
+                table.add_column(f"{icon_prefix('')}Permissions", style="bold red")
 
-        print(self._table)
+            return table
 
-        if self.scanner.verbose:
-            self.summary(
-                directories=num_dirs,
-                files=num_files,
-                symlinks=num_symlinks,
-                junctions=num_junctions,
-            )
+        t: Table = make_table()
+        rows: list[Entry] = list(self.scanner.entries(directory=self.path))
+
+        for entry in rows:
+            row: list = [
+                entry.style_name(),
+                entry.size,
+                entry.filetype,
+                entry.last_accessed,
+                entry.last_modified,
+            ]
+
+            if self.mimetypes:
+                row.append(entry.mimetype)
+
+            if self.groups:
+                row.append(entry.group)
+            if self.owners:
+                row.append(entry.owner)
+            if self.permissions:
+                row.append(entry.permissions)
+
+            t.add_row(*row)
+
+        print(t)
+
+        if self.verbose:
+            log.info(self.scanner.summary(entries=rows))

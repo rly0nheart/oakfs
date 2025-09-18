@@ -1,4 +1,4 @@
 __author__ = "Ritchie Mwewa"
 __pkg__ = "oakfs"
 __project__ = "[dim]oak[/]"
-__version__ = "0.3.1"
+__version__ = "0.4.0"

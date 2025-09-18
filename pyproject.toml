@@ -1,15 +1,12 @@
 [project]
 name = "oakfs"
-version = "0.3.1"
-description = "a humane CLI-based filesystem exploration tool, for humans."
+version = "0.4.0"
+description = "A humane CLI-based filesystem exploration tool, for humans."
 authors = [
     { name = "Ritchie Mwewa", email = "rly0nheart@duck.com" }
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
-repository = "https://github.com/rly0nheart/oakfs"
-homepage = "https://github.com/rly0nheart/oakfs"
-keywords = ["filesystem", "visualisation", "cli", "tool"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3",
@@ -18,17 +15,21 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English"
 ]
-requires-python = ">=3.12"
-dependencies = [
-    "humanize (>=4.13.0,<5.0.0)",
-    "python-magic (>=0.4.27,<1.0.0)",
-    "rich-click (>=1.8.9,<2.0.0)"
-]
+
+[tool.poetry.urls]
+issues = "https://github.com/rly0nheart/oakfs/issues"
+repository = "https://github.com/rly0nheart/oakfs"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+humanize = "^4.13.0"
+rich-click = "^1.8.9"
+puremagic = "^1.30"
 
 [tool.poetry.scripts]
 oak = "oakfs.cli:start"
 oakfs = "oakfs.cli:super_easy_barely_an_inconvenience"
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=2.2.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
