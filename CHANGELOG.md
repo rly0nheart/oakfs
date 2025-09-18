@@ -81,3 +81,9 @@ Noticeable Changes Starting from Version 0.1.3
 
 - Update README.md
 - Spelling corrections, and minor updates in code
+
+# 0.4.2
+
+### Changed
+
+- Update README.md (because...)

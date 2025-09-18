@@ -94,6 +94,12 @@ oak --tree ~/projects
 > The following options are available only in the default (table) view: `-o, --owners`, `-p, --permissions`,
 `-g, --groups`, `-m, --mimetypes`, `-D, --dt-format`, and obviously `-T, --table-style`
 
+> [!Tip]
+> If you decide not to install Nerd Fonts (because you've decided to become a caveperson for some reason), you can
+> always run oak with the `-N, --no-icons` option.
+> This will help you embrace the **unga bunga** in you.
+
+
 <p align="center">
   <strong>ok. that's all (for now).</strong>
 </p>
