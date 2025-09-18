@@ -67,7 +67,7 @@ oak --tree ~/projects
 > If no path is provided, it defaults to the current working directory.
 
 > [!Tip]
-> If you decide not to install Nerd Fonts (because you've decided to become a caveperson for some reason), you can
+> If you decide not to install Nerd Fonts (_because you've decided to become a caveperson for some reason_), you can
 > always run `oak` with the `-N, --no-icons` option.
 >> This should help with embracing the **unga bunga** within you.
 
