@@ -68,8 +68,8 @@ oak --tree ~/projects
 
 > [!Tip]
 > If you decide not to install Nerd Fonts (because you've decided to become a caveperson for some reason), you can
-> always run oak with the `-N, --no-icons` option.
-> This will help you embrace the **unga bunga** in you.
+> always run `oak` with the `-N, --no-icons` option.
+>> This should help you embrace the **unga bunga** in you.
 
 ## ⚙️ Options
 
