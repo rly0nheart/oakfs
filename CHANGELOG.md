@@ -74,3 +74,10 @@ Noticeable Changes Starting from Version 0.1.3
 
 - `python-magic` dependency. Now using `puremagic` for better cross-platform compatibility. (I recently found out that
   `python-magic` can be a pain to install or use on Windows systems).
+
+# 0.4.1
+
+### Changed
+
+- Update README.md
+- Spelling corrections, and minor updates in code

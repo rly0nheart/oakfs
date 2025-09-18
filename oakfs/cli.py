@@ -20,19 +20,17 @@ DATETIME_FORMAT = ["relative", "locale"]
     "-t", "--tree", is_flag=True, help="show filesystem hierarchy as a tree structure"
 )
 @click.option(
-    "-a", "--all", "_all", is_flag=True, help="show hidden files and directories"
+    "-a", "--all", "_all", is_flag=True, help="show hidden files and/or directories"
 )
-@click.option("-d", "--directories", is_flag=True, help="show directories only")
 @click.option("-f", "--files", is_flag=True, help="show files only")
+@click.option("-d", "--directories", is_flag=True, help="show directories only")
 @click.option("-j", "--junctions", is_flag=True, help="show junctions only <Windows>")
 @click.option("-s", "--symlinks", is_flag=True, help="show symlinks only")
-@click.option(
-    "-g", "--groups", is_flag=True, help="show file groups and owners <Table>"
-)
-@click.option("-o", "--owners", is_flag=True, help="show file owners <Table>")
-@click.option("-p", "--permissions", is_flag=True, help="show file permissions <Table>")
-@click.option("-m", "--mimetypes", is_flag=True, help="show mimetypes <Table>")
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
+@click.option("-g", "--groups", is_flag=True, help="show group")
+@click.option("-o", "--owners", is_flag=True, help="show owner")
+@click.option("-p", "--permissions", is_flag=True, help="show permissions")
+@click.option("-m", "--mimetypes", is_flag=True, help="show mimetypes")
 @click.option(
     "-N",
     "--no-icons",
@@ -45,7 +43,7 @@ DATETIME_FORMAT = ["relative", "locale"]
     type=click.Choice(DATETIME_FORMAT),
     default="relative",
     show_default=True,
-    help="specify the datetime format.",
+    help="output datetime format",
 )
 @click.option(
     "-T",
