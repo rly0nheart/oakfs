@@ -87,3 +87,19 @@ Noticeable Changes Starting from Version 0.1.3
 ### Changed
 
 - Update README.md (because...)
+
+# 0.5.0
+
+### Changed
+
+- Add ellipsis if path name is too long (table).
+- Rename Entry class to EntryStats
+- Return file type based on highest confidence score.
+- Add title to log messages' panel
+- Rename header "last accessed" to "last seen"
+
+### Removed
+
+- `-v, --verbose` Option
+- Entry creation date (not very reliable)
+- Icons from the table header (Not a good idea... visually)

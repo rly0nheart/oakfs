@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
-from .filesystem import EntryScanner, Entry, ENTRY_STYLES, style_text
+from .filesystem import EntryScanner, EntryStats, ENTRY_STYLES, style_text
 from .logroller import LogRoller
 
 __all__ = ["Oak", "log", "CWD"]
@@ -53,13 +53,7 @@ class Oak:
         self.junctions_only = junctions_only
 
         self.table_style = kwargs.get("table_style", "ROUNDED")
-
-        self.mimetypes = kwargs.get("mimetypes", False)
-        self.groups: bool = kwargs.get("groups", False)
-        self.owners: bool = kwargs.get("owners", False)
-        self.permissions: bool = kwargs.get("permissions", False)
-
-        self.verbose = kwargs.get("verbose", False)
+        self.stats: bool = kwargs.get("show_stats", False)
 
         self.scanner = EntryScanner(
             path,
@@ -72,7 +66,6 @@ class Oak:
             junctions_only=self.junctions_only,
             dt_format=kwargs.get("dt_format"),
             dt_now=datetime.now(),
-            verbose=self.verbose,
         )
 
     def tree(self):
@@ -99,7 +92,7 @@ class Oak:
             highlight=True,
         )
 
-        collected: list[Entry] = []
+        collected: list[EntryStats] = []
 
         def add_nodes(directory: str, tree: Tree):
             """
@@ -120,77 +113,60 @@ class Oak:
 
         add_nodes(directory=str(self.path), tree=root_tree)
         print(root_tree)
-
-        if self.verbose:
-            log.info(self.scanner.summary(entries=collected))
+        log.summary(self.scanner.summary(entries=collected))
 
     def table(self):
         """
         Display the directory contents in a table.
         """
 
-        icon_prefix = lambda icon: "" if self.scanner.no_icons else f"{icon} "
-
         def make_table() -> Table:
-            """
-            Make rich table
-
-            :return: A filled table
-            """
-
             table = Table(
                 show_header=True,
                 header_style="bold",
                 box=getattr(box, self.table_style.upper()),
                 highlight=True,
                 expand=True,
-                border_style="#80B3FF",
+                border_style="dim",
             )
-            table.add_column(f"{icon_prefix('󰝰')}Path", no_wrap=True)
-            table.add_column(f"{icon_prefix('')}Size", justify="right", style="bold")
-            table.add_column(f"{icon_prefix('')}Type", style="dim", overflow="fold")
-            table.add_column(
-                f"{icon_prefix('󰃰')}Accessed", style="italic", justify="right"
-            )
-            table.add_column(f"{icon_prefix('')}Modified", style="italic")
-            if self.mimetypes:
-                table.add_column(
-                    f"{icon_prefix('')}Mimetype", style="#8BA2AD", no_wrap=True
-                )
-            if self.groups:
-                table.add_column(f"{icon_prefix('')}Group")
-            if self.owners:
-                table.add_column(f"{icon_prefix('')}Owner")
-            if self.permissions:
-                table.add_column(f"{icon_prefix('')}Permissions", style="bold red")
+
+            table.add_column("name", overflow="ellipsis")
+            table.add_column("size", justify="right")
+            table.add_column("type", overflow="fold", style="dim #8BA2AD")
+            table.add_column("last seen", justify="right", style="italic")
+            table.add_column("updated", justify="right", style="italic")
+
+            if self.stats:
+                table.add_column("mimetype", style="cyan")
+                table.add_column("inode")
+                table.add_column("hardlinks")
+                table.add_column("group", style="yellow")
+                table.add_column("owner", style="green")
+                table.add_column("permissions", style="bold red")
 
             return table
 
-        t: Table = make_table()
-        rows: list[Entry] = list(self.scanner.entries(directory=self.path))
+        entry_table: Table = make_table()
+        rows: list[EntryStats] = list(self.scanner.entries(directory=self.path))
 
         for entry in rows:
             row: list = [
                 entry.style_name(),
-                entry.size,
-                entry.filetype,
-                entry.last_accessed,
-                entry.last_modified,
+                entry.size.lower(),
+                entry.filetype.lower(),
+                entry.atime,
+                entry.mtime,
             ]
 
-            if self.mimetypes:
+            if self.stats:
                 row.append(entry.mimetype)
-
-            if self.groups:
+                row.append(str(entry.inode))
+                row.append(str(entry.hardlinks))
                 row.append(entry.group)
-            if self.owners:
                 row.append(entry.owner)
-            if self.permissions:
                 row.append(entry.permissions)
 
-            t.add_row(*row)
+            entry_table.add_row(*row)
 
-        print(t)
-
-        if self.verbose:
-            log.info(self.scanner.summary(entries=rows))
+        print(entry_table)
+        log.summary(self.scanner.summary(entries=rows))

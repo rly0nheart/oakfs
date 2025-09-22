@@ -1,60 +1,78 @@
 import typing as t
 
-from rich import print
+from rich.console import Console
 from rich.panel import Panel
 
 from . import __project__
 
-__all__ = ["LogRoller"]
+__all__ = ["LogRoller", "console"]
+
+console = Console()
 
 
 class LogRoller:
     def __init__(self, name: str = __project__):
         self.name = name
 
-    def _log(self, msg_type: t.Literal["error", "warning", "info"], msg: str):
+    def _log(
+        self,
+        _type: t.Literal["error", "warning", "info", "summary"],
+        text: str,
+    ):
         """
         Internal logging method to display messages with styles.
 
-        :param msg_type: Type of message (error, warning, info)
-        :param msg: Message content
+        :param _type: Type of message (error, warning, info)
+        :param text: Message content
         """
 
         styles = {
             "error": "bold red",
             "warning": "bold yellow",
-            "info": "#80B3FF",
+            "summary": "#80B3FF",
+            "info": "bold green",
         }
         panel = Panel(
-            f"{self.name}: {msg}",
+            f"{self.name}: {text}",
+            title=_type,
+            title_align="left",
             highlight=True,
-            border_style=styles.get(msg_type, "bold #FF10F0"),
+            border_style=styles.get(_type, "bold #FF10F0"),
         )
-        print(panel)
+        console.print(panel)
 
-    def info(self, msg: str):
+    def info(self, text: str):
         """
         Log an informational message.
 
-        :param msg: Message content
+        :param text: Message content
         """
 
-        self._log(msg_type="info", msg=msg)
+        self._log(_type="info", text=text)
 
-    def warning(self, msg: str):
+    def warning(self, text: str):
         """
         Log a warning message.
 
-        :param msg: Message content
+        :param text: Message content
         """
 
-        self._log(msg_type="warning", msg=msg)
+        self._log(_type="warning", text=text)
 
-    def error(self, msg: str):
+    def error(self, text: str):
         """
         Log an error message.
 
-        :param msg: Message content
+        :param text: Message content
         """
 
-        self._log(msg_type="error", msg=msg)
+        self._log(_type="error", text=text)
+
+    def summary(self, text: str):
+        """
+        Log a summary message.
+
+        :param text: Message content
+        """
+
+        self._log(_type="summary", text=text)

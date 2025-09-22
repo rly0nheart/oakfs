@@ -4,12 +4,12 @@ import pwd
 import stat
 import typing as t
 from collections import Counter
-from contextlib import nullcontext
 from datetime import datetime
 from pathlib import Path
 
 import humanize
 import puremagic
+from puremagic import PureMagicWithConfidence
 from rich.status import Status
 from rich.text import Text
 
@@ -34,7 +34,7 @@ ENTRY_STYLES: dict = {
                 ".pub",
             ],
             "style": "#7193FF",
-            "icon": "",
+            "icon": "",
             "filetypes": ["plaintext"],
         },
         {
@@ -267,7 +267,7 @@ def style_text(filename: str, mimetype: str, extension: str, no_icons: bool) -> 
     return Text(f"{icon} {filename}" if icon else filename, style=style_info["style"])
 
 
-class Entry:
+class EntryStats:
     def __init__(self, path: Path, dt_now: datetime, dt_format: str, no_icons: bool):
         """
         Initialise the EntryStats object. Collects metadata for a given filesystem entry.
@@ -289,57 +289,71 @@ class Entry:
         """
         Load and process metadata for the entry.
         """
+
+        st = self._stat
+
+        # Basic file info
         self.filename: str = self.path.name
-        self.size: str = humanize.naturalsize(value=self._stat.st_size, binary=True)
-        self.permissions: str = stat.filemode(self._stat.st_mode)
+        self.size: str = humanize.naturalsize(value=st.st_size, binary=True)
+        self.permissions: str = stat.filemode(st.st_mode)
 
-        mtime: datetime = datetime.fromtimestamp(self._stat.st_mtime)
-        self.last_modified: str = (
-            humanize.naturaltime(self.dt_now - mtime)
-            if self.dt_format == "relative"
-            else mtime.strftime("%c")
-        )
+        # inode + link count
+        self.inode: int = st.st_ino
+        self.hardlinks: int = st.st_nlink
 
-        atime: datetime = datetime.fromtimestamp(self._stat.st_atime)
-        self.last_accessed: str = (
+        # Timestamps (with humanized formatting)
+        atime: datetime = datetime.fromtimestamp(st.st_atime)
+        self.atime: str = (
             humanize.naturaltime(self.dt_now - atime)
             if self.dt_format == "relative"
             else atime.strftime("%c")
         )
 
-        # Owner (Unix only, else fallback)
+        mtime: datetime = datetime.fromtimestamp(st.st_mtime)
+        self.mtime: str = (
+            humanize.naturaltime(self.dt_now - mtime)
+            if self.dt_format == "relative"
+            else mtime.strftime("%c")
+        )
+
+        ctime: datetime = datetime.fromtimestamp(st.st_ctime)
+        self.ctime: str = (
+            humanize.naturaltime(self.dt_now - ctime)
+            if self.dt_format == "relative"
+            else ctime.strftime("%c")
+        )
+
+        # Owner (Unix) or UID fallback
         if pwd:
             try:
-                self.owner: str = pwd.getpwuid(self._stat.st_uid).pw_name
+                self.owner: str = pwd.getpwuid(st.st_uid).pw_name
             except KeyError:
-                self.owner = str(self._stat.st_uid)
+                self.owner = str(st.st_uid)
         else:
-            self.owner = str(self._stat.st_uid)
+            self.owner = str(st.st_uid)
 
-        # Group (Unix only, else fallback)
+        # Group (Unix) or GID fallback
         if grp:
             try:
-                self.group: str = grp.getgrgid(self._stat.st_gid).gr_name
+                self.group: str = grp.getgrgid(st.st_gid).gr_name
             except KeyError:
-                self.group = str(self._stat.st_gid)
+                self.group = str(st.st_gid)
         else:
-            self.group = str(self._stat.st_gid)
+            self.group = str(st.st_gid)
 
         # File type (via puremagic or fallback)
         self.mimetype, self.filetype = self._detect_type()
 
     def _detect_type(self) -> tuple[str, str]:
         """
-        Detect the file type using puremagic.
+        Detect the file type using PureMagic and prefer the match with highest confidence.
         """
         if self.path.is_dir(follow_symlinks=False):
             if not any(self.path.iterdir()):
-                return "inode/directory", "Empty Directory"
-
-            return (
-                "inode/directory",
-                "Directory" if not IS_WINDOWS else "Folder",
-            )
+                return "inode/directory", (
+                    "Folder" if IS_WINDOWS else "Directory (Empty)"
+                )
+            return "inode/directory", "Folder" if IS_WINDOWS else "Directory"
 
         if self.path.is_symlink():
             return "inode/symlink", "Symbolic Link"
@@ -348,14 +362,18 @@ class Entry:
             return "inode/junction", "Junction"
 
         if self.path.is_file(follow_symlinks=False) and self.path.stat().st_size > 0:
-            matches = puremagic.magic_file(filename=str(self.path))
+            matches: list[PureMagicWithConfidence] = puremagic.magic_file(
+                filename=str(self.path)
+            )
             if matches:
-                best_match = matches[0]
+                best_match: PureMagicWithConfidence = max(
+                    matches, key=lambda m: m.confidence
+                )
                 return best_match.mime_type, best_match.name
 
         if self.path.is_file(follow_symlinks=False):
             if self._stat.st_size == 0:
-                return "application/x-empty", "Empty File"
+                return "application/empty", "Empty File"
 
         return "application/octet-stream", "Unknown File"
 
@@ -382,7 +400,6 @@ class EntryScanner:
         files_only: bool,
         symlinks_only: bool,
         junctions_only: bool,
-        verbose: bool,
         no_icons: bool,
         dt_now: datetime,
         dt_format: t.Literal["locale", "relative"],
@@ -397,7 +414,6 @@ class EntryScanner:
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
-        :param verbose: Enable verbose output
         :param no_icons: Disable showing nerdfont icons in output
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (relative or locale)
@@ -416,24 +432,19 @@ class EntryScanner:
         self.junctions_only = junctions_only
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
-        self.verbose = verbose
         self.no_icons = no_icons
 
-    def entries(self, directory: t.Union[str, Path]) -> t.Iterator[Entry]:
+    def entries(self, directory: t.Union[str, Path]) -> t.Iterator[EntryStats]:
         """
-        Iterate over directory entries, yielding Entry objects.
+        Iterate over directory entries, yielding EntryStats objects.
 
         :param directory: Directory path to scan
-        :return: Iterator of Entry objects
+        :return: Iterator of EntryStats objects
         """
         entries: t.List[os.DirEntry] = list(os.scandir(directory))
         entries.sort(key=lambda e: e.name.lower(), reverse=self.reverse)
 
-        status_context: t.Union[Status, nullcontext[None]] = (
-            Status("...") if self.verbose else nullcontext()
-        )
-
-        with status_context as status:
+        with Status("...") as status:
             for entry in entries:
                 if not self.show_all and entry.name.startswith("."):
                     continue
@@ -450,30 +461,22 @@ class EntryScanner:
                 ):
                     continue
 
-                if self.verbose:
-                    estats = Entry(
-                        path=Path(entry.path),
-                        dt_now=self.dt_now,
-                        dt_format=self.dt_format,
-                        no_icons=self.no_icons,
-                    )
-                    status.update(
-                        f"[bold]scanning[/bold]:::[bold #8BA2AD]{estats.filetype}[/bold #8BA2AD]:: [dim italic]{entry.name}[/dim italic]"
-                    )
-                    yield estats
-                else:
-                    yield Entry(
-                        path=Path(entry.path),
-                        dt_now=self.dt_now,
-                        dt_format=self.dt_format,
-                        no_icons=self.no_icons,
-                    )
+                entry_stats = EntryStats(
+                    path=Path(entry.path),
+                    dt_now=self.dt_now,
+                    dt_format=self.dt_format,
+                    no_icons=self.no_icons,
+                )
+                status.update(
+                    f"[bold]scanning[/bold]: [dim italic]{entry.name}[/dim italic]"
+                )
+                yield entry_stats
 
-    def summary(self, entries: t.Iterable[Entry]) -> str:
+    def summary(self, entries: t.Iterable[EntryStats]) -> str:
         """
         Generate a human-readable summary of the scanned entries.
 
-        :param entries: Iterable of Entry objects
+        :param entries: Iterable of EntryStats objects
         :return: Human-readable summary string
         """
         counts: Counter[str] = Counter()
@@ -510,4 +513,4 @@ class EntryScanner:
             summary_msg: str = ", ".join(parts[:-1]) + f", and {parts[-1]}"
 
         elapsed: str = humanize.naturaldelta(datetime.now() - self.dt_now)
-        return f"scanned {summary_msg} (in {elapsed})"
+        return f"scanned {summary_msg} in {elapsed}."

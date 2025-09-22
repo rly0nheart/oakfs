@@ -1,15 +1,60 @@
 import random
 import sys
 import typing as t
+from datetime import datetime
 from pathlib import Path
 
 import rich_click as click
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
 
 from . import __pkg__, __version__
+from .logroller import console
 from .oak import Oak, log, CWD
 
 TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"]
 DATETIME_FORMAT = ["relative", "locale"]
+
+
+def license_callback(ctx: click.Context, param: click.Option, value: bool):
+    if not value or ctx.resilient_parsing:
+        return
+
+    license_text = f"""
+MIT License
+
+Copyright (c) {datetime.now().year} [Ritchie Mwewa](https://github.com/rly0nheart)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+**THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.**
+    """
+
+    license_md = Markdown(license_text, justify="center")
+    console.print(
+        Panel(
+            license_md,
+            title="license",
+            title_align="left",
+            border_style="#80B3FF",
+        )
+    )
+    ctx.exit()
 
 
 @click.command(
@@ -20,17 +65,14 @@ DATETIME_FORMAT = ["relative", "locale"]
     "-t", "--tree", is_flag=True, help="show filesystem hierarchy as a tree structure"
 )
 @click.option(
-    "-a", "--all", "_all", is_flag=True, help="show hidden files and/or directories"
+    "-a", "--all", "_all", is_flag=True, help="show all entries including hidden ones"
 )
 @click.option("-f", "--files", is_flag=True, help="show files only")
 @click.option("-d", "--directories", is_flag=True, help="show directories only")
 @click.option("-j", "--junctions", is_flag=True, help="show junctions only <Windows>")
 @click.option("-s", "--symlinks", is_flag=True, help="show symlinks only")
+@click.option("-S", "--stats", is_flag=True, help="show entry stats <for nerds>")
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
-@click.option("-g", "--groups", is_flag=True, help="show group")
-@click.option("-o", "--owners", is_flag=True, help="show owner")
-@click.option("-p", "--permissions", is_flag=True, help="show permissions")
-@click.option("-m", "--mimetypes", is_flag=True, help="show mimetypes")
 @click.option(
     "-N",
     "--no-icons",
@@ -53,26 +95,30 @@ DATETIME_FORMAT = ["relative", "locale"]
     show_default=True,
     help="table border style",
 )
-@click.option("-v", "--verbose", is_flag=True, help="enable verbose output")
 @click.version_option(__version__, prog_name=__pkg__)
+@click.option(
+    "-l",
+    "--license",
+    is_flag=True,
+    callback=license_callback,
+    expose_value=False,
+    is_eager=True,
+    help="show the license and exit",
+)
 def cli(
     path: Path,
+    stats: bool,
     tree: bool,
     directories: bool,
     files: bool,
     symlinks: bool,
     junctions: bool,
-    mimetypes: bool,
     _all: bool,
     reverse: bool,
-    groups: bool,
-    owners: bool,
-    permissions: bool,
     dt_format: t.Literal["relative", "locale"],
     table_style: t.Literal[
         "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
     ],
-    verbose: bool,
     no_icons: bool,
 ):
     """
@@ -82,10 +128,7 @@ def cli(
     oak = Oak(
         path=path,
         reverse=reverse,
-        groups=groups,
-        owners=owners,
-        permissions=permissions,
-        mimetypes=mimetypes,
+        show_stats=stats,
         show_all=_all,
         dirs_only=directories,
         files_only=files,
@@ -93,12 +136,11 @@ def cli(
         junctions_only=junctions,
         dt_format=dt_format,
         table_style=table_style,
-        verbose=verbose,
         no_icons=no_icons,
     )
 
     if path.is_dir() and not any(path.iterdir()):
-        log.info(f"directory is empty: {path}")
+        log.warning(f"directory is empty: {path}")
     else:
         if tree:
             oak.tree()
@@ -112,6 +154,7 @@ def start():
     Handles exceptions and provides user-friendly error messages.
     """
     try:
+        Console().set_window_title("OakFs, version 6.0")
         cli(obj={})
     except FileNotFoundError as e:
         log.error(
