@@ -154,7 +154,7 @@ def start():
     Handles exceptions and provides user-friendly error messages.
     """
     try:
-        Console().set_window_title("OakFs, version 6.0")
+        Console().set_window_title(f"{__pkg__}, {__version__}")
         cli(obj={})
     except FileNotFoundError as e:
         log.error(
