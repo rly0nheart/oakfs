@@ -92,8 +92,7 @@ oak --tree ~/projects
 | `--version`                                                                   | show version and exit                                                    |
 
 > [!Note]
-> The following options are available only in the default (table) view: `--owners`, `--permissions`,
-`--groups`, `--mimetypes`, `--dt-format`, and obviously `--table-style`
+> The following options are available only in the default (table) view: `--dt-format`, and obviously `--table-style`
 
 
 <p align="center">
