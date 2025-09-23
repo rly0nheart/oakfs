@@ -5,6 +5,10 @@
   It provides a colourful, human-friendly way to explore your filesystem in the terminal using either a <b>tree</b> or <b>table view</b>.
 </p>
 
+<p align="center">
+  <img src="https://i.imgur.com/d0aFCzQ.gif">
+</p>
+
 ## ✨ Features
 
 - 🌳 **Tree view**: Visualise your filesystem hierarchy like `tree` but prettier.
