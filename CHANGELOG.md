@@ -106,8 +106,14 @@ Noticeable Changes Starting from Version 0.1.3
 - `-g, --groups`, `-o, --owners`, `-p, --permissions`, `-m, --mimetypes`, and replaced with `-S, --stats` to show all
   the information returned by the removed options.
 
-# 0.5.0
+# 0.5.1
 
 ### Changed
 
 - Fix setting terminal title
+
+# 0.5.2
+
+### Changed
+
+- Add GIF to README.md
