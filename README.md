@@ -73,27 +73,23 @@ oak --tree ~/projects
 
 ## ⚙️ Options
 
-| Option                                                                        | Description                                        |
-|-------------------------------------------------------------------------------|----------------------------------------------------|
-| `-t, --tree`                                                                  | show filesystem hierarchy in a tree view structure |
-| `-a, --all`                                                                   | show hidden files and/or directories               |
-| `-f, --files`                                                                 | show files only                                    |
-| `-d, --directories`                                                           | show directories only                              |
-| `-s, --symlinks`                                                              | show symlinks only                                 |
-| `-j, --junctions`                                                             | show junctions only <Windows>                      |
-| `-r, --reverse`                                                               | reverse sort order                                 |
-| `-g, --groups`                                                                | show groups                                        |
-| `-o, --owners`                                                                | show owners                                        |
-| `-p, --permissions`                                                           | show permissions                                   |
-| `-m, --mimetypes`                                                             | show mimetypes                                     |
-| `-v, --verbose`                                                               | enable verbose output                              |
-| `-N, --no-icons`                                                              | disable showing icons in output                    |
-| `-D, --dt-format [relative\|locale]`                                          | output datetime format (default:                   |
-| relative)                                                                     |                                                    |
-| `-T, --table-style  [ASCII\|ROUNDED\|SQUARE\|HEAVY\|DOUBLE\|SIMPLE\|MINIMAL]` | table border style (default:                       |
-| ROUNDED)                                                                      |                                                    |
-| `-h, --help`                                                                  | show help message and exit                         |
-| `--version`                                                                   | show version and exit                              |
+| Option                                                                        | Description                                                              |
+|-------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| `-t, --tree`                                                                  | show filesystem hierarchy in a tree view structure                       |
+| `-a, --all`                                                                   | show hidden files and/or directories                                     |
+| `-f, --files`                                                                 | show files only                                                          |
+| `-d, --directories`                                                           | show directories only                                                    |
+| `-s, --symlinks`                                                              | show symlinks only                                                       |
+| `-j, --junctions`                                                             | show junctions only <Windows>                                            |
+| `-r, --reverse`                                                               | reverse sort order                                                       |
+| `-S, --stats`                                                                 | show entry stats (`mimetypes`, `groups`, `owners`, `permissions`, e.t.c) |
+| `-N, --no-icons`                                                              | disable showing icons in output                                          |
+| `-D, --dt-format [relative\|locale]`                                          | output datetime format (default:                                         |
+| relative)                                                                     |                                                                          |
+| `-T, --table-style  [ASCII\|ROUNDED\|SQUARE\|HEAVY\|DOUBLE\|SIMPLE\|MINIMAL]` | table border style (default:                                             |
+| ROUNDED)                                                                      |                                                                          |
+| `-h, --help`                                                                  | show help message and exit                                               |
+| `--version`                                                                   | show version and exit                                                    |
 
 > [!Note]
 > The following options are available only in the default (table) view: `--owners`, `--permissions`,

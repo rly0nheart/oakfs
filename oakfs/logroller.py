@@ -29,7 +29,7 @@ class LogRoller:
         styles = {
             "error": "bold red",
             "warning": "bold yellow",
-            "summary": "#80B3FF",
+            "summary": "bold #80B3FF",
             "info": "bold green",
         }
         panel = Panel(

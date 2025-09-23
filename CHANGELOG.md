@@ -103,3 +103,5 @@ Noticeable Changes Starting from Version 0.1.3
 - `-v, --verbose` Option
 - Entry creation date (not very reliable)
 - Icons from the table header (Not a good idea... visually)
+- `-g, --groups`, `-o, --owners`, `-p, --permissions`, `-m, --mimetypes`, and replaced with `-S, --stats` to show all
+  the information returned by the removed options.
