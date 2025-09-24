@@ -381,7 +381,7 @@ class EntryStats:
         """
         Detect the file type using PureMagic and prefer the match with highest confidence.
         """
-        if self.path.is_dir(follow_symlinks=False):
+        if _is_dir_no_follow(path=self.path):
             if not any(self.path.iterdir()):
                 return "inode/directory", (
                     "Folder" if IS_WINDOWS else "Directory (Empty)"
@@ -394,7 +394,7 @@ class EntryStats:
         if hasattr(self.path, "is_junction") and self.path.is_junction():
             return "inode/junction", "Junction"
 
-        if self.path.is_file(follow_symlinks=False) and self.path.stat().st_size > 0:
+        if _is_file_no_follow(path=self.path) and self.path.stat().st_size > 0:
             matches: list[PureMagicWithConfidence] = puremagic.magic_file(
                 filename=str(self.path)
             )
@@ -404,7 +404,7 @@ class EntryStats:
                 )
                 return best_match.mime_type, best_match.name
 
-        if self.path.is_file(follow_symlinks=False):
+        if _is_file_no_follow(path=self.path):
             if self._stat.st_size == 0:
                 return "application/empty", "Empty File"
 
