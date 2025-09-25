@@ -8,7 +8,13 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
-from .filesystem import EntryScanner, EntryStats, ENTRY_STYLES, style_text
+from .filesystem import (
+    EntryScanner,
+    EntryStats,
+    ENTRY_STYLES,
+    style_text,
+    _is_dir_no_follow,
+)
 from .logroller import LogRoller
 
 __all__ = ["Oak", "log", "CWD"]
@@ -105,7 +111,7 @@ class Oak:
                 collected.append(entry)
                 filename: Text = entry.style_name()
 
-                if entry.path.is_dir(follow_symlinks=False):
+                if _is_dir_no_follow(path=entry.path):
                     branch = tree.add(filename)
                     add_nodes(directory=str(entry.path), tree=branch)
                 else:

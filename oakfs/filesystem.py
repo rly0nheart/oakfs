@@ -236,6 +236,38 @@ ENTRY_STYLES: dict = {
 IS_WINDOWS: bool = os.name == "nt"
 
 
+def _is_dir_no_follow(path: Path) -> bool:
+    """
+    Check if path is a directory without following symlinks.
+    Compatible with Python 3.12 and earlier.
+
+    :param path: Entry path.
+    :return: True if entry is a directory. Otherwise, false
+    """
+
+    try:
+        st = path.lstat()
+        return stat.S_ISDIR(st.st_mode)
+    except (OSError, AttributeError):
+        return False
+
+
+def _is_file_no_follow(path: Path) -> bool:
+    """
+    Check if path is a regular file without following symlinks.
+    Compatible with Python 3.12 and earlier.
+
+    :param path: Entry path.
+    :return: True if entry is a file. Otherwise, false
+    """
+
+    try:
+        st = path.lstat()
+        return stat.S_ISREG(st.st_mode)
+    except (OSError, AttributeError):
+        return False
+
+
 def style_text(filename: str, mimetype: str, extension: str, no_icons: bool) -> Text:
     """
     Return a styled Rich Text object for a filename.
@@ -245,6 +277,7 @@ def style_text(filename: str, mimetype: str, extension: str, no_icons: bool) -> 
     :param extension: File extension (lowercase, including dot)
     :param no_icons: Whether to hide icons
     """
+
     # Special types
     if mimetype in ENTRY_STYLES["special"]:
         style_info = ENTRY_STYLES["special"][mimetype]
@@ -348,7 +381,7 @@ class EntryStats:
         """
         Detect the file type using PureMagic and prefer the match with highest confidence.
         """
-        if self.path.is_dir(follow_symlinks=False):
+        if _is_dir_no_follow(path=self.path):
             if not any(self.path.iterdir()):
                 return "inode/directory", (
                     "Folder" if IS_WINDOWS else "Directory (Empty)"
@@ -361,7 +394,7 @@ class EntryStats:
         if hasattr(self.path, "is_junction") and self.path.is_junction():
             return "inode/junction", "Junction"
 
-        if self.path.is_file(follow_symlinks=False) and self.path.stat().st_size > 0:
+        if _is_file_no_follow(path=self.path) and self.path.stat().st_size > 0:
             matches: list[PureMagicWithConfidence] = puremagic.magic_file(
                 filename=str(self.path)
             )
@@ -371,7 +404,7 @@ class EntryStats:
                 )
                 return best_match.mime_type, best_match.name
 
-        if self.path.is_file(follow_symlinks=False):
+        if _is_file_no_follow(path=self.path):
             if self._stat.st_size == 0:
                 return "application/empty", "Empty File"
 
@@ -481,10 +514,10 @@ class EntryScanner:
         """
         counts: Counter[str] = Counter()
         for entry in entries:
-            if entry.path.is_dir(follow_symlinks=False):
+            if _is_dir_no_follow(path=entry.path):
                 counts["directories"] += 1
             elif entry.path.is_symlink():
-                if IS_WINDOWS and entry.path.is_dir(follow_symlinks=False):
+                if IS_WINDOWS and _is_dir_no_follow(entry.path):
                     counts["junctions"] += 1
                 else:
                     counts["symlinks"] += 1

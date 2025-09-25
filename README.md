@@ -26,8 +26,9 @@
 - 🔄 **Sorting**: Reverse order with `--reverse`.
 
 > [!Note]
-> To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
-> the [Nerd Fonts website](https://www.nerdfonts.com/) for instructions on how to install them.
+> To make your experience more pleasant, you'll need to have a Nerd Font installed, specifically **JetBrains Mono Nerd
+Font**.
+>> You can get it [here](https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip)
 
 ## 📦 Installation
 
@@ -71,7 +72,8 @@ oak --tree ~/projects
 > If no path is provided, it defaults to the current working directory.
 
 > [!Tip]
-> If you decide not to install Nerd Fonts (_because you've decided to become a caveperson for some reason_), you can
+> If you decided not to install **JetBrains Mono Nerd Font** (_because you've decided to become a caveperson for some
+reason_), you can
 > always run `oak` with the `-N, --no-icons` option.
 >> This should help with embracing the **unga bunga** within you.
 
