@@ -26,8 +26,9 @@
 - 🔄 **Sorting**: Reverse order with `--reverse`.
 
 > [!Note]
-> To make your experience more pleasant, you'll need to have Nerd Fonts installed. Check out
-> the [Nerd Fonts website](https://www.nerdfonts.com/) for instructions on how to install them.
+> To make your experience more pleasant, you'll need to have a Nerd Font installed, specifically **JetBrains Mono Nerd
+Font**.
+>> You can get it [here](https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip)
 
 ## 📦 Installation
 
