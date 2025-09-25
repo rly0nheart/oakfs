@@ -117,3 +117,9 @@ Noticeable Changes Starting from Version 0.1.3
 ### Changed
 
 - Add GIF to README.md
+
+# 0.5.3
+
+### Changed
+
+- Apply backwards compatibility fix for an issue raised in `filesyste.py`
