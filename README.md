@@ -30,6 +30,12 @@
 Font**.
 >> You can get it [here](https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip)
 
+> [!Tip]
+> If you decided not to install **JetBrains Mono Nerd Font** (_because you've decided to become a caveperson for some
+reason_), you can
+> always run `oak` with the `-N, --no-icons` option.
+>> This should help with embracing the **unga bunga** within you.
+
 ## 📦 Installation
 
 **Oakfs** is available on [PyPI](https://pypi.org/project/pypi), and can be installed with pip:
@@ -70,11 +76,6 @@ oak --tree ~/projects
 
 > [!Note]
 > If no path is provided, it defaults to the current working directory.
-
-> [!Tip]
-> If you decide not to install Nerd Fonts (_because you've decided to become a caveperson for some reason_), you can
-> always run `oak` with the `-N, --no-icons` option.
->> This should help with embracing the **unga bunga** within you.
 
 ## ⚙️ Options
 
