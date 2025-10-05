@@ -65,7 +65,7 @@ class Oak:
             path,
             reverse=self.reverse,
             show_all=self.show_all,
-            no_icons=kwargs.get("no_icons", True),
+            icons=kwargs.get("icons", False),
             dirs_only=self.dirs_only,
             files_only=self.files_only,
             symlinks_only=self.symlinks_only,
@@ -88,7 +88,7 @@ class Oak:
                     style_text(
                         filename=root_name,
                         mimetype="inode/directory",
-                        no_icons=self.scanner.no_icons,
+                        icons=self.scanner.icons,
                         extension="",
                     )
                 ),

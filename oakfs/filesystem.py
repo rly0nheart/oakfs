@@ -175,6 +175,21 @@ ENTRY_STYLES: dict = {
             "style": "purple",
             "icon": "",
         },
+        {
+            "names": [
+                "Dockerfile",
+                "Dockerfile.dev",
+                "Dockerfile.prod",
+                "docker-compose.yml",
+            ],
+            "style": "#79B8FF",
+            "icon": "",
+        },
+        {"names": ["LICENSE", "LICENSE.md"], "style": "white", "icon": ""},
+        {"names": ["Makefile"], "style": "#6f42c1", "icon": ""},
+        {"names": ["README", "README.md", "README.rst"], "style": "white", "icon": ""},
+        {"names": ["Procfile"], "style": "#8cc84b", "icon": ""},
+        {"names": ["Gemfile"], "style": "#701516", "icon": ""},
         {"extensions": [".docx", ".doc"], "style": "", "icon": "󰈬"},
         {"extensions": [".iso", ".dmg"], "style": "", "icon": "󰗮"},
         {"extensions": [".ipa", ".app", ".pkg"], "style": "", "icon": ""},
@@ -268,52 +283,68 @@ def _is_file_no_follow(path: Path) -> bool:
         return False
 
 
-def style_text(filename: str, mimetype: str, extension: str, no_icons: bool) -> Text:
+def style_text(filename: str, mimetype: str, extension: str, icons: bool) -> Text:
     """
     Return a styled Rich Text object for a filename.
 
     :param filename: The entry's filename
     :param mimetype: The entry's mimetype or special type (e.g. "inode/directory")
     :param extension: File extension (lowercase, including dot)
-    :param no_icons: Whether to hide icons
+    :param icons: Enable/Disable showing icons in output
     """
 
-    # Special types
+    # Special types (directory, symlink, etc.)
     if mimetype in ENTRY_STYLES["special"]:
         style_info = ENTRY_STYLES["special"][mimetype]
-        icon = "" if no_icons else style_info["icon"]
+        icon = style_info["icon"] if icons else ""
         return Text(
             f"{icon} {filename}" if icon else filename, style=style_info["style"]
         )
 
-    # Extension-based groups
+    filename_lower = filename.lower()
+
+    # Go through all groups (both extensions and names)
     for group in ENTRY_STYLES["groups"]:
-        if extension in group["extensions"]:
-            icon = "" if no_icons else group["icon"]
+        # 1Match extension-based rules
+        exts = group.get("extensions")
+        if exts and extension in exts:
+            icon = group.get("icon", "")
             return Text(
-                f"{icon} {filename}" if icon else filename, style=group["style"]
+                f"{icon} {filename}" if icons and icon else filename,
+                style=group.get("style", ""),
             )
 
-    # Fallback
+        # Match name-based rules
+        names = group.get("names")
+        if names:
+            for name in names:
+                if filename_lower == name.lower():
+                    icon = group.get("icon", "")
+                    return Text(
+                        f"{icon} {filename}" if icons and icon else filename,
+                        style=group.get("style", ""),
+                    )
+
+    # Fallback: generic file
     style_info = ENTRY_STYLES["special"]["file"]
-    icon = "" if no_icons else style_info["icon"]
+    icon = style_info["icon"] if icons else ""
     return Text(f"{icon} {filename}" if icon else filename, style=style_info["style"])
 
 
 class EntryStats:
-    def __init__(self, path: Path, dt_now: datetime, dt_format: str, no_icons: bool):
+    def __init__(self, path: Path, dt_now: datetime, dt_format: str, icons: bool):
         """
         Initialise the EntryStats object. Collects metadata for a given filesystem entry.
 
         :param path: Path object representing the file or directory
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (relative or locale)
-        :param no_icons: Disable showing nerdfont icons in output
+        :param icons: Enable/Disable showing icons in output
         """
         self.path = path
         self.dt_now = dt_now
         self.dt_format = dt_format
-        self.no_icons = no_icons
+        self.icons = icons
 
         self._stat: os.stat_result = path.stat(follow_symlinks=False)
         self._load_metadata()
@@ -419,7 +450,7 @@ class EntryStats:
             filename=self.filename,
             mimetype=self.mimetype,
             extension=os.path.splitext(self.filename)[1].lower(),
-            no_icons=self.no_icons,
+            icons=self.icons,
         )
 
 
@@ -433,7 +464,7 @@ class EntryScanner:
         files_only: bool,
         symlinks_only: bool,
         junctions_only: bool,
-        no_icons: bool,
+        icons: bool,
         dt_now: datetime,
         dt_format: t.Literal["locale", "relative"],
     ):
@@ -447,7 +478,7 @@ class EntryScanner:
         :param files_only: Show files only
         :param symlinks_only: Show symlinks only
         :param junctions_only: Show junctions only (Windows)
-        :param no_icons: Disable showing nerdfont icons in output
+        :param icons: Enable/Disable showing icons in output
         :param dt_now: Current datetime for relative time calculations
         :param dt_format: Specify the datetime format (relative or locale)
         """
@@ -465,7 +496,7 @@ class EntryScanner:
         self.junctions_only = junctions_only
         self.dt_now = dt_now or datetime.now()
         self.dt_format = dt_format
-        self.no_icons = no_icons
+        self.icons = icons
 
     def entries(self, directory: t.Union[str, Path]) -> t.Iterator[EntryStats]:
         """
@@ -498,7 +529,7 @@ class EntryScanner:
                     path=Path(entry.path),
                     dt_now=self.dt_now,
                     dt_format=self.dt_format,
-                    no_icons=self.no_icons,
+                    icons=self.icons,
                 )
                 status.update(
                     f"[bold]scanning[/bold]: [dim italic]{entry.name}[/dim italic]"

@@ -17,7 +17,7 @@ TABLE_STYLES = ["ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINI
 DATETIME_FORMAT = ["relative", "locale"]
 
 
-def license_callback(ctx: click.Context, param: click.Option, value: bool):
+def license_callback(ctx: click.Context, _: click.Parameter, value: t.Any):
     if not value or ctx.resilient_parsing:
         return
 
@@ -74,10 +74,10 @@ SOFTWARE.**
 @click.option("-S", "--stats", is_flag=True, help="show entry stats <for nerds>")
 @click.option("-r", "--reverse", is_flag=True, help="reverse the sort order")
 @click.option(
-    "-N",
-    "--no-icons",
+    "-i",
+    "--icons",
     is_flag=True,
-    help="disable showing icons in output",
+    help="show icons next to entry names",
 )
 @click.option(
     "-D",
@@ -119,7 +119,7 @@ def cli(
     table_style: t.Literal[
         "ASCII", "ROUNDED", "SQUARE", "HEAVY", "DOUBLE", "SIMPLE", "MINIMAL"
     ],
-    no_icons: bool,
+    icons: bool,
 ):
     """
     oak: A humane CLI-based filesystem exploration tool, for humans.
@@ -136,7 +136,7 @@ def cli(
         junctions_only=junctions,
         dt_format=dt_format,
         table_style=table_style,
-        no_icons=no_icons,
+        icons=icons,
     )
 
     if path.is_dir() and not any(path.iterdir()):
@@ -165,10 +165,6 @@ def start():
         log.error(
             f"cannot open directory '{e.filename}': [bold]permission denied[/]",
         )
-        sys.exit(1)
-
-    except Exception as e:
-        log.error(f"unknown error: {e}")
         sys.exit(1)
 
 
